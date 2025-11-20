@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Hosting;
 using TradingApp.Contracts.Events;
 using TradingApp.Kafka.Configuration;
 using TradingApp.Kafka.Extensions;
@@ -14,7 +13,16 @@ builder.Services.Configure<KafkaProducerOptions>(builder.Configuration.GetSectio
 builder.Services.Configure<BinanceStreamOptions>(builder.Configuration.GetSection("Binance"));
 builder.Services.Configure<MarketDataIngestorOptions>(builder.Configuration.GetSection("Ingestor"));
 
-builder.Services.AddKafkaProducer<string, RawMarketTradeEvent>();
+var kafkaOptions = builder.Configuration.GetSection("Kafka").Get<KafkaProducerOptions>() ?? new KafkaProducerOptions();
+
+if (kafkaOptions.Enabled && !string.IsNullOrWhiteSpace(kafkaOptions.BootstrapServers))
+{
+    builder.Services.AddKafkaProducer<string, RawMarketTradeEvent>();
+}
+else
+{
+    builder.Services.AddNullKafkaProducer<string, RawMarketTradeEvent>();
+}
 builder.Services.AddSingleton<IBinanceTradeStream, BinanceTradeStream>();
 builder.Services.AddSingleton<ITradeIngestionPipeline, TradeIngestionPipeline>();
 builder.Services.AddHostedService<MarketDataIngestionWorker>();

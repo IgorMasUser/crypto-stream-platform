@@ -4,6 +4,7 @@ namespace TradingApp.Kafka.Configuration;
 
 public sealed class KafkaProducerOptions
 {
+    public bool Enabled { get; set; } = true;
     public string BootstrapServers { get; set; } = string.Empty;
     public string? ClientId { get; set; } = Environment.MachineName;
     public SecurityProtocol? SecurityProtocol { get; set; }

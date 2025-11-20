@@ -4,7 +4,6 @@ using TradingApp.Kafka.Abstractions;
 using TradingApp.MarketData.Ingestor.Application.Abstractions;
 using TradingApp.MarketData.Ingestor.Application.Configuration;
 using TradingApp.MarketData.Ingestor.Domain.Models;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace TradingApp.MarketData.Ingestor.Application.Services;

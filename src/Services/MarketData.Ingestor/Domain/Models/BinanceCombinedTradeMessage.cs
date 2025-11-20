@@ -6,15 +6,39 @@ public sealed record BinanceCombinedTradeMessage(
     [property: JsonPropertyName("stream")] string Stream,
     [property: JsonPropertyName("data")] BinanceTradeData Data);
 
-public sealed record BinanceTradeData(
-    [property: JsonPropertyName("e")] string EventType,
-    [property: JsonPropertyName("E")] long EventTime,
-    [property: JsonPropertyName("s")] string Symbol,
-    [property: JsonPropertyName("t")] long TradeId,
-    [property: JsonPropertyName("p")] string Price,
-    [property: JsonPropertyName("q")] string Quantity,
-    [property: JsonPropertyName("b")] long BuyerOrderId,
-    [property: JsonPropertyName("a")] long SellerOrderId,
-    [property: JsonPropertyName("T")] long TradeTime,
-    [property: JsonPropertyName("m")] bool IsMarketMaker);
+public sealed class BinanceTradeData
+{
+    [JsonPropertyName("e")]
+    public string EventType { get; init; } = default!;
+
+    [JsonPropertyName("E")]
+    public long EventTime { get; init; }
+
+    [JsonPropertyName("s")]
+    public string Symbol { get; init; } = default!;
+
+    [JsonPropertyName("t")]
+    public long TradeId { get; init; }
+
+    [JsonPropertyName("p")]
+    public string Price { get; init; } = default!;
+
+    [JsonPropertyName("q")]
+    public string Quantity { get; init; } = default!;
+
+    [JsonPropertyName("b")]
+    public long BuyerOrderId { get; init; }
+
+    [JsonPropertyName("a")]
+    public long SellerOrderId { get; init; }
+
+    [JsonPropertyName("T")]
+    public long TradeTime { get; init; }
+
+    [JsonPropertyName("m")]
+    public bool IsMarketMaker { get; init; }
+
+    [JsonPropertyName("M")]
+    public bool IsBestMatch { get; init; }
+}
 

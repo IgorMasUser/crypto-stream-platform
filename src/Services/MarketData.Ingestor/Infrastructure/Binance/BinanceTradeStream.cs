@@ -13,7 +13,10 @@ public sealed class BinanceTradeStream : IBinanceTradeStream, IAsyncDisposable
 {
     private readonly BinanceStreamOptions _options;
     private readonly ILogger<BinanceTradeStream> _logger;
-    private readonly JsonSerializerOptions _serializerOptions = new(JsonSerializerDefaults.Web);
+    private readonly JsonSerializerOptions _serializerOptions = new(JsonSerializerDefaults.Web)
+    {
+        PropertyNameCaseInsensitive = false
+    };
 
     public BinanceTradeStream(IOptions<BinanceStreamOptions> options, ILogger<BinanceTradeStream> logger)
     {
@@ -23,7 +26,7 @@ public sealed class BinanceTradeStream : IBinanceTradeStream, IAsyncDisposable
 
     public async IAsyncEnumerable<BinanceCombinedTradeMessage> SubscribeAsync([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        if (_options.Symbols.Count == 0)
+        if (_options.Symbols.ToList().Count == 0)
         {
             throw new InvalidOperationException("At least one Binance symbol must be configured.");
         }

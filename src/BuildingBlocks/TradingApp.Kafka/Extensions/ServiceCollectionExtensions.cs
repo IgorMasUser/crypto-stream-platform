@@ -12,5 +12,11 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<IKafkaProducer<TKey, TValue>, KafkaProducer<TKey, TValue>>();
         return services;
     }
+
+    public static IServiceCollection AddNullKafkaProducer<TKey, TValue>(this IServiceCollection services)
+    {
+        services.TryAddSingleton<IKafkaProducer<TKey, TValue>, NullKafkaProducer<TKey, TValue>>();
+        return services;
+    }
 }
 
