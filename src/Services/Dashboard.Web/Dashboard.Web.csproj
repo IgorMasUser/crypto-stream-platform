@@ -1,0 +1,10 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <AssemblyName>TradingApp.Dashboard.Web</AssemblyName>
+    <RootNamespace>TradingApp.Dashboard.Web</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\BuildingBlocks\TradingApp.Elastic\TradingApp.Elastic.csproj" />
+  </ItemGroup>
+</Project>
+

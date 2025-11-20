@@ -1,0 +1,25 @@
+body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    margin: 0;
+}
+
+.page {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 250px;
+    background-color: #0b1a30;
+    color: #fff;
+    padding: 1rem;
+}
+
+.nav-link {
+    color: #fff;
+}
+
+.content {
+    padding: 1rem;
+}
+

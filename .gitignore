@@ -1,0 +1,74 @@
+# Build results
+bin/
+obj/
+out/
+
+# User-specific files
+*.user
+*.userosscache
+*.suo
+*.sln.docstates
+
+# Visual Studio
+.vs/
+*.vcxproj.user
+
+# Visual Studio Code
+.vscode/
+
+# Rider / ReSharper
+.idea/
+*.sln.iml
+_ReSharper*/
+*.[Rr]e[Ss]harper
+
+# DotCover
+*.dotCover
+
+# NuGet
+*.nupkg
+*.snupkg
+*.nuspec
+packages/
+artifacts/
+
+# Logs
+*.log
+logs/
+
+# Secrets / local config
+*.pfx
+*.snk
+*.userprefs
+appsettings.Development.json
+appsettings.Local.json
+*.secrets.json
+
+# Generated files
+TestResult*/
+coverage*/
+*.coverage
+*.coveragexml
+
+# Publish artifacts
+publish/
+
+# Temporary files
+*.tmp
+*.tmp_proj
+*.bak
+*.backup
+*.DS_Store
+Thumbs.db
+
+# Azure Functions local settings
+local.settings.json
+
+# Rider solution cache
+.idea/
+
+# Dotnet tools
+.store/
+.tools/
+*** End Patch*** End Patch to=functions.apply_patch json to=functions.apply_patch_COLLISION
+

@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>TradingApp.Elastic</AssemblyName>
+    <RootNamespace>TradingApp.Elastic</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Elastic.Clients.Elasticsearch" Version="8.12.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.0" />
+  </ItemGroup>
+</Project>
+
