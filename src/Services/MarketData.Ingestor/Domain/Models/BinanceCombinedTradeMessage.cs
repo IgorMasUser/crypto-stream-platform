@@ -45,18 +45,6 @@ public sealed class BinanceTradeData
     public string Quantity { get; init; } = default!;
 
     /// <summary>
-    /// Buyer order ID associated with the trade.
-    /// </summary>
-    [JsonPropertyName("b")]
-    public long BuyerOrderId { get; init; }
-
-    /// <summary>
-    /// Seller order ID associated with the trade.
-    /// </summary>
-    [JsonPropertyName("a")]
-    public long SellerOrderId { get; init; }
-
-    /// <summary>
     /// Trade execution time in milliseconds since Unix epoch.
     /// </summary>
     [JsonPropertyName("T")]

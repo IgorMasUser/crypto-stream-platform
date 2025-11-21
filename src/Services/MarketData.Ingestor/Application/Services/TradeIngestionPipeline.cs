@@ -50,8 +50,6 @@ public sealed class TradeIngestionPipeline : ITradeIngestionPipeline
                 ParseDecimal(data.Quantity),
                 data.TradeId,
                 data.IsMarketMaker,
-                data.BuyerOrderId,
-                data.SellerOrderId,
                 tradeTimeUtc,
                 eventTimeUtc,
                 DateTime.UtcNow);
