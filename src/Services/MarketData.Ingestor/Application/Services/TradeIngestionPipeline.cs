@@ -38,6 +38,9 @@ public sealed class TradeIngestionPipeline : ITradeIngestionPipeline
 
         try
         {
+            var tradeTimeUtc = DateTimeOffset.FromUnixTimeMilliseconds(data.TradeTime).UtcDateTime;
+            var eventTimeUtc = DateTimeOffset.FromUnixTimeMilliseconds(data.EventTime).UtcDateTime;
+
             return new RawMarketTradeEvent(
                 Guid.NewGuid().ToString("N"),
                 "binance",
@@ -46,7 +49,11 @@ public sealed class TradeIngestionPipeline : ITradeIngestionPipeline
                 ParseDecimal(data.Price),
                 ParseDecimal(data.Quantity),
                 data.TradeId,
-                DateTimeOffset.FromUnixTimeMilliseconds(data.EventTime).UtcDateTime,
+                data.IsMarketMaker,
+                data.BuyerOrderId,
+                data.SellerOrderId,
+                tradeTimeUtc,
+                eventTimeUtc,
                 DateTime.UtcNow);
         }
         catch (Exception ex)
