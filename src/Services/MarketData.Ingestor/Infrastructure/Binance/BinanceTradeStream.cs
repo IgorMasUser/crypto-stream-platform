@@ -32,6 +32,7 @@ public sealed class BinanceTradeStream : IBinanceTradeStream, IAsyncDisposable
         }
 
         var streamUri = BuildStreamUri();
+        var consecutiveFailures = 0;
 
         while (!cancellationToken.IsCancellationRequested)
         {
@@ -44,6 +45,7 @@ public sealed class BinanceTradeStream : IBinanceTradeStream, IAsyncDisposable
                 await socket.ConnectAsync(streamUri, cancellationToken).ConfigureAwait(false);
                 _logger.LogInformation("Connected to Binance stream {Stream}", streamUri);
 
+                consecutiveFailures = 0;
                 streamMessages = ReceiveInternalAsync(socket, cancellationToken);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -52,7 +54,20 @@ public sealed class BinanceTradeStream : IBinanceTradeStream, IAsyncDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Binance stream connection dropped. Reconnecting in {DelaySeconds}s", _options.ReconnectDelaySeconds);
+                consecutiveFailures++;
+                var backoff = CalculateReconnectDelay(consecutiveFailures);
+                _logger.LogWarning(
+                    ex,
+                    "Binance stream connection dropped. Reconnecting in {Delay}s (attempt {Attempt})",
+                    backoff.TotalSeconds,
+                    consecutiveFailures);
+
+                if (!cancellationToken.IsCancellationRequested)
+                {
+                    await Task.Delay(backoff, cancellationToken).ConfigureAwait(false);
+                }
+
+                continue;
             }
 
             if (streamMessages is not null)
@@ -65,7 +80,14 @@ public sealed class BinanceTradeStream : IBinanceTradeStream, IAsyncDisposable
 
             if (!cancellationToken.IsCancellationRequested)
             {
-                await Task.Delay(TimeSpan.FromSeconds(_options.ReconnectDelaySeconds), cancellationToken).ConfigureAwait(false);
+                consecutiveFailures++;
+                var backoff = CalculateReconnectDelay(consecutiveFailures);
+                _logger.LogInformation(
+                    "Binance stream closed. Attempting reconnect in {Delay}s (attempt {Attempt})",
+                    backoff.TotalSeconds,
+                    consecutiveFailures);
+
+                await Task.Delay(backoff, cancellationToken).ConfigureAwait(false);
             }
         }
     }
@@ -149,5 +171,17 @@ public sealed class BinanceTradeStream : IBinanceTradeStream, IAsyncDisposable
     }
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+
+    private TimeSpan CalculateReconnectDelay(int failureCount)
+    {
+        var baseDelay = TimeSpan.FromSeconds(_options.ReconnectDelaySeconds);
+        var maxDelay = TimeSpan.FromSeconds(_options.MaxReconnectDelaySeconds);
+        var exponential = TimeSpan.FromMilliseconds(baseDelay.TotalMilliseconds * Math.Pow(2, Math.Clamp(failureCount - 1, 0, 10)));
+        var capped = exponential > maxDelay ? maxDelay : exponential;
+        var jitterSeconds = _options.ReconnectJitterSeconds > 0
+            ? Random.Shared.NextDouble() * _options.ReconnectJitterSeconds
+            : 0;
+        return capped + TimeSpan.FromSeconds(jitterSeconds);
+    }
 }
 

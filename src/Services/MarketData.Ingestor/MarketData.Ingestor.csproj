@@ -5,6 +5,7 @@
     <UserSecretsId>tradingapp-marketdata-ingestor</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Polly" Version="7.2.4" />
     <ProjectReference Include="..\..\BuildingBlocks\TradingApp.Contracts\TradingApp.Contracts.csproj" />
     <ProjectReference Include="..\..\BuildingBlocks\TradingApp.Kafka\TradingApp.Kafka.csproj" />
     <ProjectReference Include="..\..\BuildingBlocks\TradingApp.Elastic\TradingApp.Elastic.csproj" />

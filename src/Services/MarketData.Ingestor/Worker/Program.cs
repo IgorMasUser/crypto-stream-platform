@@ -12,6 +12,7 @@ var builder = Host.CreateApplicationBuilder(args);
 builder.Services.Configure<KafkaProducerOptions>(builder.Configuration.GetSection("Kafka"));
 builder.Services.Configure<BinanceStreamOptions>(builder.Configuration.GetSection("Binance"));
 builder.Services.Configure<MarketDataIngestorOptions>(builder.Configuration.GetSection("Ingestor"));
+builder.Services.Configure<KafkaResilienceOptions>(builder.Configuration.GetSection("Kafka:Resilience"));
 
 var kafkaOptions = builder.Configuration.GetSection("Kafka").Get<KafkaProducerOptions>() ?? new KafkaProducerOptions();
 
