@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: marketdata-ingestor-config
+data:
+  KAFKA__BOOTSTRAPSERVERS: "kafka:9092"
+  BINANCE__SYMBOLS: "btcusdt,ethusdt,bnbusdt,xrpusdt,solusdt"
+

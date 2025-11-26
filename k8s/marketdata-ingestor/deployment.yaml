@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: marketdata-ingestor
+  labels:
+    app: marketdata-ingestor
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: marketdata-ingestor
+  template:
+    metadata:
+      labels:
+        app: marketdata-ingestor
+    spec:
+      containers:
+        - name: marketdata-ingestor
+          image: trading/marketdata-ingestor:dev
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: KAFKA__BOOTSTRAPSERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: marketdata-ingestor-config
+                  key: KAFKA__BOOTSTRAPSERVERS
+            - name: BINANCE__SYMBOLS
+              valueFrom:
+                configMapKeyRef:
+                  name: marketdata-ingestor-config
+                  key: BINANCE__SYMBOLS
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+
