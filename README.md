@@ -50,3 +50,24 @@
    ```bash
    kubectl delete -f k8s/marketdata-ingestor/
    ```
+
+## Local Kafka Stack
+
+To test end-to-end ingestion you can spin up a single-broker Kafka cluster (with ZooKeeper) inside the same Kubernetes cluster:
+
+```bash
+# deploy
+kubectl apply -f k8s/kafka/zookeeper.yaml
+kubectl apply -f k8s/kafka/kafka.yaml
+
+# verify
+kubectl get pods -l app=zookeeper
+kubectl get pods -l app=kafka
+```
+
+The Kafka service is exposed as `kafka:9092`, which matches the default `MarketData.Ingestor` configuration. When you're done, remove the stack:
+
+```bash
+kubectl delete -f k8s/kafka/kafka.yaml
+kubectl delete -f k8s/kafka/zookeeper.yaml
+```
