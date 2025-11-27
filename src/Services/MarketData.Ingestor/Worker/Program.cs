@@ -6,7 +6,6 @@ using TradingApp.MarketData.Ingestor.Application.Configuration;
 using TradingApp.MarketData.Ingestor.Application.Services;
 using TradingApp.MarketData.Ingestor.Infrastructure.Binance;
 using TradingApp.MarketData.Ingestor.Worker.HostedServices;
-using TradingApp.MarketData.Ingestor.Worker.Testing;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -14,7 +13,6 @@ builder.Services.Configure<KafkaProducerOptions>(builder.Configuration.GetSectio
 builder.Services.Configure<BinanceStreamOptions>(builder.Configuration.GetSection("Binance"));
 builder.Services.Configure<MarketDataIngestorOptions>(builder.Configuration.GetSection("Ingestor"));
 builder.Services.Configure<KafkaResilienceOptions>(builder.Configuration.GetSection("Kafka:Resilience"));
-builder.Services.Configure<TestTradeConsumerOptions>(builder.Configuration.GetSection("Kafka:TestConsumer"));
 
 var kafkaOptions = builder.Configuration.GetSection("Kafka").Get<KafkaProducerOptions>() ?? new KafkaProducerOptions();
 
@@ -29,18 +27,6 @@ else
 builder.Services.AddSingleton<IBinanceTradeStream, BinanceTradeStream>();
 builder.Services.AddSingleton<ITradeIngestionPipeline, TradeIngestionPipeline>();
 builder.Services.AddHostedService<MarketDataIngestionWorker>();
-
-var publishSampleOnStartup = builder.Configuration.GetValue<bool>("Kafka:PublishSampleOnStartup", false);
-if (publishSampleOnStartup)
-{
-    builder.Services.AddHostedService<TestTradePublisherHostedService>();
-}
-
-var testConsumerOptions = builder.Configuration.GetSection("Kafka:TestConsumer").Get<TestTradeConsumerOptions>();
-if (testConsumerOptions?.Enabled == true)
-{
-    builder.Services.AddHostedService<TestTradeConsumerHostedService>();
-}
 
 var app = builder.Build();
 await app.RunAsync();

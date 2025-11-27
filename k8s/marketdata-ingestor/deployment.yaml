@@ -34,11 +34,6 @@ spec:
                 configMapKeyRef:
                   name: marketdata-ingestor-config
                   key: KAFKA__BOOTSTRAPSERVERS
-            - name: KAFKA__TESTCONSUMER__ENABLED
-              valueFrom:
-                configMapKeyRef:
-                  name: marketdata-ingestor-config
-                  key: KAFKA__TESTCONSUMER__ENABLED
             - name: BINANCE__SYMBOLS
               valueFrom:
                 configMapKeyRef:

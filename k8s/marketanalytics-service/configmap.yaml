@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: marketanalytics-service-config
+data:
+  KAFKA__ENABLED: "true"
+  KAFKA__BOOTSTRAPSERVERS: "kafka:9092"
+  KAFKA__CLIENTID: "marketanalytics-service"
+  KAFKA__CONSUMER__ENABLED: "true"
+  KAFKA__CONSUMER__TOPIC: "raw-market-trades"
+  KAFKA__CONSUMER__GROUPID: "marketanalytics-service"
+  KAFKA__CONSUMER__AUTOOFFSETRESET: "Earliest"
+  KAFKA__CONSUMER__ENABLEAUTOCOMMIT: "true"
+

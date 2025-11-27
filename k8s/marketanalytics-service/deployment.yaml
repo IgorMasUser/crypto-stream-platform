@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: marketanalytics-service
+  labels:
+    app: marketanalytics-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: marketanalytics-service
+  template:
+    metadata:
+      labels:
+        app: marketanalytics-service
+    spec:
+      containers:
+        - name: marketanalytics-service
+          image: trading/marketanalytics-service:dev
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: KAFKA__ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: marketanalytics-service-config
+                  key: KAFKA__ENABLED
+            - name: KAFKA__BOOTSTRAPSERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: marketanalytics-service-config
+                  key: KAFKA__BOOTSTRAPSERVERS
+            - name: KAFKA__CLIENTID
+              valueFrom:
+                configMapKeyRef:
+                  name: marketanalytics-service-config
+                  key: KAFKA__CLIENTID
+            - name: KAFKA__CONSUMER__ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: marketanalytics-service-config
+                  key: KAFKA__CONSUMER__ENABLED
+            - name: KAFKA__CONSUMER__TOPIC
+              valueFrom:
+                configMapKeyRef:
+                  name: marketanalytics-service-config
+                  key: KAFKA__CONSUMER__TOPIC
+            - name: KAFKA__CONSUMER__GROUPID
+              valueFrom:
+                configMapKeyRef:
+                  name: marketanalytics-service-config
+                  key: KAFKA__CONSUMER__GROUPID
+            - name: KAFKA__CONSUMER__AUTOOFFSETRESET
+              valueFrom:
+                configMapKeyRef:
+                  name: marketanalytics-service-config
+                  key: KAFKA__CONSUMER__AUTOOFFSETRESET
+            - name: KAFKA__CONSUMER__ENABLEAUTOCOMMIT
+              valueFrom:
+                configMapKeyRef:
+                  name: marketanalytics-service-config
+                  key: KAFKA__CONSUMER__ENABLEAUTOCOMMIT
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+

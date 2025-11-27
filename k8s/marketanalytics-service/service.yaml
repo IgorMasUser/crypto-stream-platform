@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: marketanalytics-service
+  labels:
+    app: marketanalytics-service
+spec:
+  type: ClusterIP
+  selector:
+    app: marketanalytics-service
+  ports:
+    - name: metrics
+      port: 9090
+      targetPort: 9090
+

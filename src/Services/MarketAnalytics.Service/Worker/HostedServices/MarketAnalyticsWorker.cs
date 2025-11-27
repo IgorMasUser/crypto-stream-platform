@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 namespace TradingApp.MarketAnalytics.Service.Worker.HostedServices;
 

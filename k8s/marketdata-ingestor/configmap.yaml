@@ -5,7 +5,5 @@ metadata:
 data:
   KAFKA__ENABLED: "true"
   KAFKA__BOOTSTRAPSERVERS: "kafka:9092"
-  KAFKA__PUBLISHSAMPLEONSTARTUP: "true"
-  KAFKA__TESTCONSUMER__ENABLED: "true"
   BINANCE__SYMBOLS: "btcusdt,ethusdt,bnbusdt,xrpusdt,solusdt"
 
