@@ -45,7 +45,7 @@
    ```bash
    kubectl apply -f k8s/marketdata-ingestor/
    ```
-   The default `ConfigMap` provides placeholder settings (`kafka:9092`, several Binance symbols); update `k8s/marketdata-ingestor/configmap.yaml` before applying if your environment differs.
+   The default `ConfigMap` enables Kafka (`KAFKA__ENABLED=true`), points to the in-cluster broker (`kafka:9092`), and turns on the sample publisher (`KAFKA__PUBLISHSAMPLEONSTARTUP=true`) so you can verify end-to-end delivery. Update `k8s/marketdata-ingestor/configmap.yaml` before applying if your environment differs.
 4. Update or remove the deployment by reapplying or deleting the same manifest directory:
    ```bash
    kubectl delete -f k8s/marketdata-ingestor/
@@ -71,3 +71,14 @@ The Kafka service is exposed as `kafka:9092`, which matches the default `MarketD
 kubectl delete -f k8s/kafka/kafka.yaml
 kubectl delete -f k8s/kafka/zookeeper.yaml
 ```
+
+## Quick Kafka Smoke Test
+
+When `Kafka:PublishSampleOnStartup` (or `KAFKA__PUBLISHSAMPLEONSTARTUP`) is `true`, the `MarketData.Ingestor` worker automatically publishes a single `RawMarketTradeEvent` through Kafka on startup (`TestTradePublisherHostedService`). You can confirm end-to-end delivery by running a temporary toolbox pod:
+
+```bash
+kubectl run kafka-tools --image=confluentinc/cp-kafka:7.3.2 --restart=Never -- sleep 3600
+kubectl exec -it kafka-tools -- kafka-console-consumer --bootstrap-server kafka:9092 --topic raw-market-trades --from-beginning --max-messages 1
+```
+
+You should see the sample trade emitted by the worker. Delete the toolbox pod afterwards with `kubectl delete pod kafka-tools`.

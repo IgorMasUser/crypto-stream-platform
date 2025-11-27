@@ -6,6 +6,7 @@ using TradingApp.MarketData.Ingestor.Application.Configuration;
 using TradingApp.MarketData.Ingestor.Application.Services;
 using TradingApp.MarketData.Ingestor.Infrastructure.Binance;
 using TradingApp.MarketData.Ingestor.Worker.HostedServices;
+using TradingApp.MarketData.Ingestor.Worker.Testing;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -27,6 +28,12 @@ else
 builder.Services.AddSingleton<IBinanceTradeStream, BinanceTradeStream>();
 builder.Services.AddSingleton<ITradeIngestionPipeline, TradeIngestionPipeline>();
 builder.Services.AddHostedService<MarketDataIngestionWorker>();
+
+var publishSampleOnStartup = builder.Configuration.GetValue<bool>("Kafka:PublishSampleOnStartup", false);
+if (publishSampleOnStartup)
+{
+    builder.Services.AddHostedService<TestTradePublisherHostedService>();
+}
 
 var app = builder.Build();
 await app.RunAsync();

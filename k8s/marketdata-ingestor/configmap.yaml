@@ -3,6 +3,8 @@ kind: ConfigMap
 metadata:
   name: marketdata-ingestor-config
 data:
+  KAFKA__ENABLED: "true"
   KAFKA__BOOTSTRAPSERVERS: "kafka:9092"
+  KAFKA__PUBLISHSAMPLEONSTARTUP: "true"
   BINANCE__SYMBOLS: "btcusdt,ethusdt,bnbusdt,xrpusdt,solusdt"
 

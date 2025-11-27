@@ -5,7 +5,7 @@ metadata:
   labels:
     app: marketdata-ingestor
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: marketdata-ingestor
@@ -19,6 +19,16 @@ spec:
           image: trading/marketdata-ingestor:dev
           imagePullPolicy: IfNotPresent
           env:
+            - name: KAFKA__ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: marketdata-ingestor-config
+                  key: KAFKA__ENABLED
+            - name: KAFKA__PUBLISHSAMPLEONSTARTUP
+              valueFrom:
+                configMapKeyRef:
+                  name: marketdata-ingestor-config
+                  key: KAFKA__PUBLISHSAMPLEONSTARTUP
             - name: KAFKA__BOOTSTRAPSERVERS
               valueFrom:
                 configMapKeyRef:
