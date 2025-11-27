@@ -14,6 +14,7 @@ builder.Services.Configure<KafkaProducerOptions>(builder.Configuration.GetSectio
 builder.Services.Configure<BinanceStreamOptions>(builder.Configuration.GetSection("Binance"));
 builder.Services.Configure<MarketDataIngestorOptions>(builder.Configuration.GetSection("Ingestor"));
 builder.Services.Configure<KafkaResilienceOptions>(builder.Configuration.GetSection("Kafka:Resilience"));
+builder.Services.Configure<TestTradeConsumerOptions>(builder.Configuration.GetSection("Kafka:TestConsumer"));
 
 var kafkaOptions = builder.Configuration.GetSection("Kafka").Get<KafkaProducerOptions>() ?? new KafkaProducerOptions();
 
@@ -33,6 +34,12 @@ var publishSampleOnStartup = builder.Configuration.GetValue<bool>("Kafka:Publish
 if (publishSampleOnStartup)
 {
     builder.Services.AddHostedService<TestTradePublisherHostedService>();
+}
+
+var testConsumerOptions = builder.Configuration.GetSection("Kafka:TestConsumer").Get<TestTradeConsumerOptions>();
+if (testConsumerOptions?.Enabled == true)
+{
+    builder.Services.AddHostedService<TestTradeConsumerHostedService>();
 }
 
 var app = builder.Build();
