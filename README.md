@@ -72,6 +72,42 @@ kubectl delete -f k8s/kafka/kafka.yaml
 kubectl delete -f k8s/kafka/zookeeper.yaml
 ```
 
+## Observability with AKHQ
+
+AKHQ gives you a browser-based view of topics, partitions, and consumer groups. This repo ships lightweight manifests under `k8s/akhq/`:
+
+- **Deployment** (`k8s/akhq/deployment.yaml`) – sets `AKHQ_CONFIGURATION` so AKHQ’s “local” cluster points at `kafka:9092`. If you rename the Kafka service, update the `bootstrap.servers` value here.
+- **Service** (`k8s/akhq/service.yaml`) – exposes the AKHQ pod inside the cluster on port 8080.
+- **Ingress** (`k8s/akhq/ingress.yaml`) – routes `Host: akhq.localdev` to the AKHQ service via the `nginx` ingress class.
+
+### Installing ingress-nginx
+
+For kind-based clusters run:
+```bash
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.11.1/deploy/static/provider/kind/deploy.yaml
+kubectl label node dev-cluster-control-plane ingress-ready=true   # once per cluster
+```
+This installs/labels the NGINX controller so it can host the AKHQ ingress (and future ones).
+
+### Bridging the ingress to localhost
+
+Kind runs inside Docker, so we forward a local port into the cluster:
+
+1. Patch the ingress service to use fixed NodePorts (`80→30080`, `443→30443`). The repo already includes that patch—reapplying `k8s/ingress-nginx` or the above script keeps the ports stable.
+2. Run a tiny socat bridge so `localhost:8081` reaches the controller:
+   ```bash
+   docker run -d --name akhq-proxy --restart=always \
+     -p 8081:8080 --network kind alpine/socat \
+     TCP-LISTEN:8080,fork TCP:172.18.0.2:30080
+   ```
+   (Replace `172.18.0.2` with the IP of your `dev-cluster-control-plane` container: `docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' dev-cluster-control-plane`.)
+3. Add a hosts entry so the browser resolves the hostname:
+   ```
+   127.0.0.1   akhq.localdev
+   ```
+
+Now AKHQ is permanently reachable at `http://akhq.localdev:8081/ui` without `kubectl port-forward`. Remove the helper container with `docker rm -f akhq-proxy` if you no longer need the tunnel.
+
 ## Quick Kafka Smoke Test
 
 When `Kafka:PublishSampleOnStartup` (or `KAFKA__PUBLISHSAMPLEONSTARTUP`) is `true`, the `MarketData.Ingestor` worker automatically publishes a single `RawMarketTradeEvent` through Kafka on startup (`TestTradePublisherHostedService`). You can confirm end-to-end delivery by running a temporary toolbox pod:
