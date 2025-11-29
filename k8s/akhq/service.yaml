@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: akhq
+  labels:
+    app: akhq
+spec:
+  type: ClusterIP
+  selector:
+    app: akhq
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+
+
