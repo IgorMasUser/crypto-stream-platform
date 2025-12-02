@@ -5,5 +5,5 @@ metadata:
 data:
   KAFKA__ENABLED: "true"
   KAFKA__BOOTSTRAPSERVERS: "kafka:9092"
-  BINANCE__SYMBOLS: "btcusdt,ethusdt,bnbusdt,xrpusdt,solusdt"
+  BINANCE__SYMBOLS: "btcusdt,ethusdt,solusdt,bnbusdt,xrpusdt,adausdt,dogeusdt,maticusdt,dotusdt,shibusdt,ltcusdt,avaxusdt,linkusdt,atomusdt,trxusdt"
 
