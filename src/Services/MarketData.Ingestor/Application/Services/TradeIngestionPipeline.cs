@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Globalization;
+using System.Threading;
 using Microsoft.Extensions.Options;
 using Polly;
 using TradingApp.Contracts.Events;
@@ -16,6 +18,10 @@ public sealed class TradeIngestionPipeline : ITradeIngestionPipeline
     private readonly ILogger<TradeIngestionPipeline> _logger;
     private readonly KafkaResilienceOptions _kafkaResilienceOptions;
     private readonly AsyncPolicy _kafkaPolicy;
+    private readonly TimeSpan _throughputLogInterval;
+    private readonly Stopwatch _throughputStopwatch;
+    private readonly object _throughputLock = new();
+    private long _messagesSinceLastLog;
 
     public TradeIngestionPipeline(
         IKafkaProducer<string, RawMarketTradeEvent> producer,
@@ -28,6 +34,9 @@ public sealed class TradeIngestionPipeline : ITradeIngestionPipeline
         _kafkaResilienceOptions = kafkaResilienceOptions.Value;
         _logger = logger;
         _kafkaPolicy = BuildKafkaPolicy();
+        var intervalSeconds = Math.Max(1, _options.ThroughputLogIntervalSeconds);
+        _throughputLogInterval = TimeSpan.FromSeconds(intervalSeconds);
+        _throughputStopwatch = Stopwatch.StartNew();
     }
 
     public async Task HandleAsync(BinanceCombinedTradeMessage message, CancellationToken cancellationToken)
@@ -46,6 +55,7 @@ public sealed class TradeIngestionPipeline : ITradeIngestionPipeline
                 {
                     await _producer.ProduceAsync(_options.KafkaTopic, tradeEvent.Symbol, tradeEvent, ct)
                         .ConfigureAwait(false);
+                    TrackThroughput();
                 },
                 context,
                 cancellationToken).ConfigureAwait(false);
@@ -181,6 +191,41 @@ public sealed class TradeIngestionPipeline : ITradeIngestionPipeline
                 tradeEvent.Symbol,
                 topic);
             return false;
+        }
+    }
+
+    private void TrackThroughput()
+    {
+        Interlocked.Increment(ref _messagesSinceLastLog);
+
+        if (_throughputStopwatch.Elapsed < _throughputLogInterval)
+        {
+            return;
+        }
+
+        lock (_throughputLock)
+        {
+            if (_throughputStopwatch.Elapsed < _throughputLogInterval)
+            {
+                return;
+            }
+
+            var elapsed = _throughputStopwatch.Elapsed;
+            _throughputStopwatch.Restart();
+
+            var processed = Interlocked.Exchange(ref _messagesSinceLastLog, 0);
+            if (processed == 0)
+            {
+                return;
+            }
+
+            var rate = processed / Math.Max(0.001, elapsed.TotalSeconds);
+            _logger.LogInformation(
+                "Processed {Count} trades in {Seconds:F1}s (~{Rate:F1} msg/s) -> Kafka topic {Topic}",
+                processed,
+                elapsed.TotalSeconds,
+                rate,
+                _options.KafkaTopic);
         }
     }
 }
