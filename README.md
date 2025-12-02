@@ -108,6 +108,13 @@ Kind runs inside Docker, so we forward a local port into the cluster:
 
 Now AKHQ is permanently reachable at `http://akhq.localdev:8081/ui` without `kubectl port-forward`. Remove the helper container with `docker rm -f akhq-proxy` if you no longer need the tunnel.
 
+### How to restore akhq after system restart
+1. docker inspect -f "{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}" dev-cluster-control-plane
+2. docker rm -f akhq-proxy
+3. docker run -d --name akhq-proxy --restart=always -p 8081:8080 --network kind alpine/socat TCP-LISTEN:8080,fork TCP:172.18.0.x:30080
+4. kubectl get ingress
+5. kubectl get nodes --show-labels | findstr ingress-ready
+
 ## Quick Kafka Smoke Test
 
 When `Kafka:PublishSampleOnStartup` (or `KAFKA__PUBLISHSAMPLEONSTARTUP`) is `true`, the `MarketData.Ingestor` worker automatically publishes a single `RawMarketTradeEvent` through Kafka on startup (`TestTradePublisherHostedService`). You can confirm end-to-end delivery by running a temporary toolbox pod:
