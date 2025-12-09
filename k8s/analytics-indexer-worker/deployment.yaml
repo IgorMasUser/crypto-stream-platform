@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-indexer-worker
+  labels:
+    app: analytics-indexer-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: analytics-indexer-worker
+  template:
+    metadata:
+      labels:
+        app: analytics-indexer-worker
+    spec:
+      containers:
+        - name: analytics-indexer-worker
+          image: trading/analyticsindexer-worker:dev
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: KAFKA__ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: analytics-indexer-worker-config
+                  key: KAFKA__ENABLED
+            - name: KAFKA__BOOTSTRAPSERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: analytics-indexer-worker-config
+                  key: KAFKA__BOOTSTRAPSERVERS
+            - name: KAFKA__CONSUMER__TOPIC
+              valueFrom:
+                configMapKeyRef:
+                  name: analytics-indexer-worker-config
+                  key: KAFKA__CONSUMER__TOPIC
+            - name: KAFKA__CONSUMER__GROUPID
+              valueFrom:
+                configMapKeyRef:
+                  name: analytics-indexer-worker-config
+                  key: KAFKA__CONSUMER__GROUPID
+            - name: KAFKA__CONSUMER__AUTOOFFSETRESET
+              valueFrom:
+                configMapKeyRef:
+                  name: analytics-indexer-worker-config
+                  key: KAFKA__CONSUMER__AUTOOFFSETRESET
+            - name: KAFKA__CONSUMER__ENABLEAUTOCOMMIT
+              valueFrom:
+                configMapKeyRef:
+                  name: analytics-indexer-worker-config
+                  key: KAFKA__CONSUMER__ENABLEAUTOCOMMIT
+            - name: ELASTIC__ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: analytics-indexer-worker-config
+                  key: ELASTIC__ENDPOINT
+            - name: ELASTIC__INDEXPREFIX
+              valueFrom:
+                configMapKeyRef:
+                  name: analytics-indexer-worker-config
+                  key: ELASTIC__INDEXPREFIX
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+
