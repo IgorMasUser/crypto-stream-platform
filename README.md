@@ -13,6 +13,7 @@
   - `MarketAnalytics.Service` – placeholder worker for downstream analytics.
   - `Dashboard.Web` – Blazor Server host for future dashboards.
 - `AnalyticsIndexer.Worker` – scalable consumer for `aggregated-market-analytics` that will index aggregated events into Elastic (CQRS read model for the dashboard).
+- `Postgres` (k8s/postgres/) – lightweight in-cluster database for MarketAnalytics.Service (ClusterIP `postgres:5432`, default user/password `postgres`/`postgres`, db `marketanalytics`).
 
 ## Getting Started
 
