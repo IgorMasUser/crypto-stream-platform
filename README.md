@@ -12,6 +12,7 @@
   - `MarketData.Ingestor` – .NET worker streaming Binance trades and producing Kafka events with resilient reconnect + Kafka retry policies.
   - `MarketAnalytics.Service` – placeholder worker for downstream analytics.
   - `Dashboard.Web` – Blazor Server host for future dashboards.
+- `AnalyticsIndexer.Worker` – scalable consumer for `aggregated-market-analytics` that will index aggregated events into Elastic (CQRS read model for the dashboard).
 
 ## Getting Started
 
