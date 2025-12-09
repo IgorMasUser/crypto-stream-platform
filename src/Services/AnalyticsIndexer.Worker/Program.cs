@@ -1,24 +1,16 @@
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using TradingApp.Elastic.Configuration;
+using TradingApp.Elastic.Extensions;
+using TradingApp.AnalyticsIndexer.Worker;
+using TradingApp.AnalyticsIndexer.Worker.Options;
 
-namespace TradingApp.AnalyticsIndexer.Worker;
+var builder = Host.CreateApplicationBuilder(args);
+builder.Services.AddLogging(b => b.AddConsole());
 
-public class Program
-{
-    public static async Task Main(string[] args)
-    {
-        var host = Host.CreateDefaultBuilder(args)
-            .ConfigureLogging(builder =>
-            {
-                builder.AddConsole();
-            })
-            .ConfigureServices(services =>
-            {
-                services.AddHostedService<IndexerHostedService>();
-            })
-            .Build();
+builder.Services.Configure<ElasticOptions>(builder.Configuration.GetSection("Elastic"));
+builder.Services.Configure<IndexerOptions>(builder.Configuration.GetSection("Indexer"));
+builder.Services.AddElasticClient();
+builder.Services.AddHostedService<IndexerHostedService>();
 
-        await host.RunAsync();
-    }
-}
+var app = builder.Build();
+await app.RunAsync();
 

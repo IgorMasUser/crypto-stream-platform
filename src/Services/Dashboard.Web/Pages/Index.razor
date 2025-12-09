@@ -1,8 +1,82 @@
 @page "/"
+@inject TradingApp.Dashboard.Web.Services.AnalyticsService AnalyticsService
 
 <PageTitle>TradingApp Dashboard</PageTitle>
 
 <h1>TradingApp Dashboard</h1>
+<p>Aggregated market analytics (latest):</p>
 
-<p>This Blazor Server host will surface market data analytics soon.</p>
+<button class="btn btn-primary" @onclick="Load">Refresh</button>
+<button class="btn btn-danger ms-2" @onclick="Clear" disabled="@_clearing">Clear index</button>
+
+@if (_loading)
+{
+    <p>Loading...</p>
+}
+else if (_items.Count == 0)
+{
+    <p>No data.</p>
+}
+else
+{
+    <table class="table table-striped table-sm">
+        <thead>
+            <tr>
+                <th>Symbol</th>
+                <th>Open</th>
+                <th>High</th>
+                <th>Low</th>
+                <th>Last</th>
+                <th>Volume</th>
+                <th>Trades</th>
+                <th>Window Start</th>
+                <th>Window End</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var x in _items)
+            {
+                <tr>
+                    <td>@x.Symbol</td>
+                    <td>@x.OpenPrice</td>
+                    <td>@x.HighPrice</td>
+                    <td>@x.LowPrice</td>
+                    <td>@x.LastPrice</td>
+                    <td>@x.Volume</td>
+                    <td>@x.TradesCount</td>
+                    <td>@x.WindowStartUtc</td>
+                    <td>@x.WindowEndUtc</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private bool _loading = true;
+    private bool _clearing = false;
+    private List<TradingApp.Contracts.Events.AggregatedMarketAnalyticsEvent> _items = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Load();
+    }
+
+    private async Task Load()
+    {
+        _loading = true;
+        StateHasChanged();
+        _items = (await AnalyticsService.GetAsync(50)).ToList();
+        _loading = false;
+    }
+
+    private async Task Clear()
+    {
+        _clearing = true;
+        StateHasChanged();
+        await AnalyticsService.ClearAsync();
+        _items.Clear();
+        _clearing = false;
+    }
+}
 

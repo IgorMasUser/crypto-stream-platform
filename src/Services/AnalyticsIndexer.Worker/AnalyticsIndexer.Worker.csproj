@@ -12,6 +12,7 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.0" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\BuildingBlocks\TradingApp.Contracts\TradingApp.Contracts.csproj" />
     <ProjectReference Include="..\..\BuildingBlocks\TradingApp.Elastic\TradingApp.Elastic.csproj" />
     <ProjectReference Include="..\..\BuildingBlocks\TradingApp.Kafka\TradingApp.Kafka.csproj" />
   </ItemGroup>

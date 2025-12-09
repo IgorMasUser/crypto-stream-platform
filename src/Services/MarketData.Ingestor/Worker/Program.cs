@@ -6,6 +6,7 @@ using TradingApp.MarketData.Ingestor.Application.Configuration;
 using TradingApp.MarketData.Ingestor.Application.Services;
 using TradingApp.MarketData.Ingestor.Infrastructure.Binance;
 using TradingApp.MarketData.Ingestor.Worker.HostedServices;
+using TradingApp.MarketData.Ingestor.Worker.Testing;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -19,14 +20,17 @@ var kafkaOptions = builder.Configuration.GetSection("Kafka").Get<KafkaProducerOp
 if (kafkaOptions.Enabled && !string.IsNullOrWhiteSpace(kafkaOptions.BootstrapServers))
 {
     builder.Services.AddKafkaProducer<string, RawMarketTradeEvent>();
+    builder.Services.AddKafkaProducer<string, AggregatedMarketAnalyticsEvent>();
 }
 else
 {
     builder.Services.AddNullKafkaProducer<string, RawMarketTradeEvent>();
+    builder.Services.AddNullKafkaProducer<string, AggregatedMarketAnalyticsEvent>();
 }
 builder.Services.AddSingleton<IBinanceTradeStream, BinanceTradeStream>();
 builder.Services.AddSingleton<ITradeIngestionPipeline, TradeIngestionPipeline>();
 builder.Services.AddHostedService<MarketDataIngestionWorker>();
+builder.Services.AddHostedService<TestAggregatedPublisherHostedService>();
 
 var app = builder.Build();
 await app.RunAsync();

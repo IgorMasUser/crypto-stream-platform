@@ -9,6 +9,9 @@ data:
   KAFKA__CONSUMER__GROUPID: "analytics-indexer-worker"
   KAFKA__CONSUMER__AUTOOFFSETRESET: "Earliest"
   KAFKA__CONSUMER__ENABLEAUTOCOMMIT: "true"
-  ELASTIC__ENDPOINT: "http://elastic:9200"
-  ELASTIC__INDEXPREFIX: "analytics-index"
+  INDEXER__BOOTSTRAPSERVERS: "kafka:9092"
+  INDEXER__TOPIC: "aggregated-market-analytics"
+  INDEXER__GROUPID: "analytics-indexer-worker"
+  INDEXER__INDEXPREFIX: "analytics-index"
+  ELASTIC__URI: "http://elastic:9200"
 

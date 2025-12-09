@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dashboard-web
+  labels:
+    app: dashboard-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dashboard-web
+  template:
+    metadata:
+      labels:
+        app: dashboard-web
+    spec:
+      containers:
+        - name: dashboard-web
+          image: trading/dashboard-web:dev
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dashboard-web
+  labels:
+    app: dashboard-web
+spec:
+  type: ClusterIP
+  selector:
+    app: dashboard-web
+  ports:
+    - port: 80
+      targetPort: 8080

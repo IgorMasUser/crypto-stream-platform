@@ -19,46 +19,31 @@ spec:
           image: trading/analyticsindexer-worker:dev
           imagePullPolicy: IfNotPresent
           env:
-            - name: KAFKA__ENABLED
+            - name: INDEXER__BOOTSTRAPSERVERS
               valueFrom:
                 configMapKeyRef:
                   name: analytics-indexer-worker-config
-                  key: KAFKA__ENABLED
-            - name: KAFKA__BOOTSTRAPSERVERS
+                  key: INDEXER__BOOTSTRAPSERVERS
+            - name: INDEXER__TOPIC
               valueFrom:
                 configMapKeyRef:
                   name: analytics-indexer-worker-config
-                  key: KAFKA__BOOTSTRAPSERVERS
-            - name: KAFKA__CONSUMER__TOPIC
+                  key: INDEXER__TOPIC
+            - name: INDEXER__GROUPID
               valueFrom:
                 configMapKeyRef:
                   name: analytics-indexer-worker-config
-                  key: KAFKA__CONSUMER__TOPIC
-            - name: KAFKA__CONSUMER__GROUPID
+                  key: INDEXER__GROUPID
+            - name: INDEXER__INDEXPREFIX
               valueFrom:
                 configMapKeyRef:
                   name: analytics-indexer-worker-config
-                  key: KAFKA__CONSUMER__GROUPID
-            - name: KAFKA__CONSUMER__AUTOOFFSETRESET
+                  key: INDEXER__INDEXPREFIX
+            - name: ELASTIC__URI
               valueFrom:
                 configMapKeyRef:
                   name: analytics-indexer-worker-config
-                  key: KAFKA__CONSUMER__AUTOOFFSETRESET
-            - name: KAFKA__CONSUMER__ENABLEAUTOCOMMIT
-              valueFrom:
-                configMapKeyRef:
-                  name: analytics-indexer-worker-config
-                  key: KAFKA__CONSUMER__ENABLEAUTOCOMMIT
-            - name: ELASTIC__ENDPOINT
-              valueFrom:
-                configMapKeyRef:
-                  name: analytics-indexer-worker-config
-                  key: ELASTIC__ENDPOINT
-            - name: ELASTIC__INDEXPREFIX
-              valueFrom:
-                configMapKeyRef:
-                  name: analytics-indexer-worker-config
-                  key: ELASTIC__INDEXPREFIX
+                  key: ELASTIC__URI
           resources:
             requests:
               cpu: 100m
