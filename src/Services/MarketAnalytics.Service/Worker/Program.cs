@@ -14,7 +14,6 @@ builder.Services.AddKafkaProducer<string, AggregatedMarketAnalyticsEvent>();
 builder.Services.Configure<KafkaTradeConsumerOptions>(builder.Configuration.GetSection("Kafka:Consumer"));
 builder.Services.AddSingleton<IRawTradeEventHandler, AggregatingRawTradeEventHandler>();
 builder.Services.AddSingleton<IRawTradeEventConsumer, KafkaRawTradeEventConsumer>();
-builder.Services.AddHostedService<MarketAnalyticsWorker>();
 builder.Services.AddHostedService<RawTradeConsumerHostedService>();
 
 var app = builder.Build();
