@@ -29,7 +29,6 @@ public sealed class AggregatingRawTradeEventHandler : IRawTradeEventHandler
         var windowStart = trade.EventTimeUtc.AddMinutes(-1);
 
         var aggregated = new AggregatedMarketAnalyticsEvent(
-            EventId: Guid.NewGuid().ToString("N"),
             Symbol: trade.Symbol,
             WindowStartUtc: windowStart,
             WindowEndUtc: windowEnd,
@@ -41,14 +40,17 @@ public sealed class AggregatingRawTradeEventHandler : IRawTradeEventHandler
             TradesCount: 1,
             CreatedAtUtc: DateTime.UtcNow);
 
-        await _producer.ProduceAsync(AggregatedTopic, trade.Symbol, aggregated, cancellationToken)
+        var key = $"{aggregated.Symbol}_{aggregated.WindowStartUtc:O}";
+
+        await _producer.ProduceAsync(AggregatedTopic, key, aggregated, cancellationToken)
             .ConfigureAwait(false);
 
         _logger.LogInformation(
-            "Published test aggregate for {Symbol} trade {TradeId} to topic {Topic}",
-            trade.Symbol,
+            "Published test aggregate for {Symbol} trade {TradeId} to topic {Topic} with key {Key}",
+            aggregated.Symbol,
             trade.TradeId,
-            AggregatedTopic);
+            AggregatedTopic,
+            key);
     }
 }
 

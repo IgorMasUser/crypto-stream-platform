@@ -1,7 +1,6 @@
 ﻿namespace TradingApp.Contracts.Events;
 
 public record AggregatedMarketAnalyticsEvent(
-    string EventId,             // Idempotent event id (use as key when upserting)
     string Symbol,              // Symbol the window belongs to (e.g., BTCUSDT)
     DateTime WindowStartUtc,    // Window start (UTC)
     DateTime WindowEndUtc,      // Window end (UTC)
