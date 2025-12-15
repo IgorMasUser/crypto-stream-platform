@@ -29,9 +29,19 @@ public sealed class AggregatingRawTradeEventHandler : IRawTradeEventHandler
 
     public async Task HandleAsync(RawMarketTradeEvent trade, CancellationToken cancellationToken)
     {
-        var key = $"{trade.Symbol}|{trade.TradeTimeUtc:O}";
+        // Normalize to the start of the minute so all trades in that minute share the same key.
+        var windowStart = new DateTime(
+            trade.EventTimeUtc.Year,
+            trade.EventTimeUtc.Month,
+            trade.EventTimeUtc.Day,
+            trade.EventTimeUtc.Hour,
+            trade.EventTimeUtc.Minute,
+            0,
+            DateTimeKind.Utc);
 
-        var aggregate = tradesAggregatorService.BuildAggregatedTrades(key, aggragationRangeinMinutes, trade);
+        var aggregate = tradesAggregatorService.BuildAggregatedTrades(windowStart, aggragationRangeinMinutes, trade);
+
+        var key = $"{trade.Symbol}|{windowStart:O}";
 
         var aggregatedEvent = ToEvent(aggregate);
 

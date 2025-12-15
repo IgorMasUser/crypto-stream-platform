@@ -16,18 +16,49 @@ namespace TradingApp.MarketAnalytics.Service.Application.Services
             this.aggregator = new ConcurrentDictionary<string, AggregatedMarketAnalyticsEntity>();
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
-        public AggregatedMarketAnalyticsEntity BuildAggregatedTrades(string aggregationKey,int aggragationRangeinMinutes, RawMarketTradeEvent trade)
+        public AggregatedMarketAnalyticsEntity BuildAggregatedTrades(DateTime windowStart,int aggragationRangeinMinutes, RawMarketTradeEvent trade)
         {
             try
             {
-                if (!aggregator.TryGetValue(aggregationKey, out aggregatedMarketEntity!))
-                {
-                    aggregatedMarketEntity = AddFirstTrade(trade, aggregationKey, aggragationRangeinMinutes, new AggregatedMarketAnalyticsEntity());
-                }
-                else
-                {
-                    aggregatedMarketEntity = BuildUpTradesAggregation(trade, aggregationKey, aggregatedMarketEntity);
-                }
+                if (trade is null) throw new ArgumentNullException(nameof(trade));
+
+                var windowEnd = windowStart.AddMinutes(aggragationRangeinMinutes);
+
+                var aggregationKey = $"{trade.Symbol}|{windowStart:O}";
+
+                aggregatedMarketEntity = aggregator.AddOrUpdate(
+                    aggregationKey,
+                    _ => new AggregatedMarketAnalyticsEntity
+                    {
+                        Symbol = trade.Symbol,
+                        CreatedAtUtc = DateTime.UtcNow,
+                        WindowStartUtc = windowStart,
+                        WindowEndUtc = windowEnd,
+                        OpenPrice = trade.Price,
+                        HighPrice = trade.Price,
+                        LowPrice = trade.Price,
+                        LastPrice = trade.Price,
+                        Volume = trade.Quantity,
+                        TradesCount = 1
+                    },
+                    (_, existing) =>
+                    {
+                        lock (existing)
+                        {
+                            existing.WindowStartUtc = windowStart;
+                            existing.WindowEndUtc = windowEnd;
+                            if (string.IsNullOrWhiteSpace(existing.Symbol))
+                                existing.Symbol = trade.Symbol;
+
+                            existing.HighPrice = Math.Max(existing.HighPrice, trade.Price);
+                            existing.LowPrice = Math.Min(existing.LowPrice, trade.Price);
+                            existing.LastPrice = trade.Price;
+                            existing.Volume += trade.Quantity;
+                            existing.TradesCount += 1;
+
+                            return existing;
+                        }
+                    });
 
                 return aggregatedMarketEntity;
             }
@@ -38,40 +69,5 @@ namespace TradingApp.MarketAnalytics.Service.Application.Services
             }
         }
 
-        private AggregatedMarketAnalyticsEntity BuildUpTradesAggregation(RawMarketTradeEvent trade, string aggregationKey, AggregatedMarketAnalyticsEntity aggregatedMarketEntity)
-        {
-            aggregatedMarketEntity.HighPrice = Math.Max(aggregatedMarketEntity.HighPrice, trade.Price);
-            aggregatedMarketEntity.LowPrice = Math.Min(aggregatedMarketEntity.LowPrice, trade.Price);
-            aggregatedMarketEntity.LastPrice = trade.Price;
-
-            aggregatedMarketEntity.Volume += trade.Quantity;
-            aggregatedMarketEntity.TradesCount += 1;
-
-            aggregator.TryAdd<string, AggregatedMarketAnalyticsEntity>(aggregationKey, aggregatedMarketEntity);
-
-            return aggregatedMarketEntity;
-        }
-
-
-        private AggregatedMarketAnalyticsEntity AddFirstTrade(RawMarketTradeEvent trade, string aggregationKey, int aggragationRangeinMinutes, AggregatedMarketAnalyticsEntity aggregatedMarketEntity)
-        {
-            if(aggregatedMarketEntity is null) throw new ArgumentNullException(nameof(aggregatedMarketEntity));
-            if(trade is null) throw new ArgumentNullException(nameof(trade));
-
-            aggregatedMarketEntity.WindowStartUtc = trade.EventTimeUtc;
-            aggregatedMarketEntity.WindowEndUtc = trade.EventTimeUtc.AddMinutes(aggragationRangeinMinutes);
-
-            aggregatedMarketEntity.OpenPrice = trade.Price;
-            aggregatedMarketEntity.HighPrice = trade.Price;
-            aggregatedMarketEntity.LowPrice = trade.Price;
-            aggregatedMarketEntity.LastPrice = trade.Price;
-
-            aggregatedMarketEntity.Volume += trade.Quantity;
-            aggregatedMarketEntity.TradesCount += 1;
-
-            aggregator.TryAdd<string, AggregatedMarketAnalyticsEntity>(aggregationKey, aggregatedMarketEntity);
-
-            return aggregatedMarketEntity;
-        }
     }
 }
