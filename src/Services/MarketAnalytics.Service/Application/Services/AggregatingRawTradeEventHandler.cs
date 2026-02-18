@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using TradingApp.Contracts.Events;
 using TradingApp.Kafka.Abstractions;
 using TradingApp.MarketAnalytics.Service.Application.Abstractions;

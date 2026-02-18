@@ -59,13 +59,14 @@ public sealed class IndexerHostedService : BackgroundService
 
                 var indexName = $"{_options.IndexPrefix}";
                 var response = await _elastic.IndexAsync(evt, idx => idx.Index(indexName), stoppingToken);
+                var eventKey = $"{evt.Symbol}|{evt.WindowStartUtc:O}";
                 if (!response.IsValidResponse)
                 {
-                    _logger.LogWarning("Failed to index event {EventId}: {Reason}", evt.EventId, response.DebugInformation);
+                    _logger.LogWarning("Failed to index event {EventKey}: {Reason}", eventKey, response.DebugInformation);
                 }
                 else
                 {
-                    _logger.LogInformation("Indexed event {EventId} into {Index}", evt.EventId, indexName);
+                    _logger.LogInformation("Indexed event {EventKey} into {Index}", eventKey, indexName);
                 }
             }
             catch (OperationCanceledException)

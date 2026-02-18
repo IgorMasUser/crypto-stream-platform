@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using TradingApp.Contracts.Events;
 using TradingApp.Kafka.Abstractions;
 
@@ -21,10 +22,10 @@ public sealed class TestAggregatedPublisherHostedService : IHostedService
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
+        var windowStart = DateTime.UtcNow.AddMinutes(-1);
         var evt = new AggregatedMarketAnalyticsEvent(
-            EventId: Guid.NewGuid().ToString("N"),
             Symbol: "BTCUSDT",
-            WindowStartUtc: DateTime.UtcNow.AddMinutes(-1),
+            WindowStartUtc: windowStart,
             WindowEndUtc: DateTime.UtcNow,
             OpenPrice: 100m,
             HighPrice: 110m,
@@ -34,8 +35,9 @@ public sealed class TestAggregatedPublisherHostedService : IHostedService
             TradesCount: 10,
             CreatedAtUtc: DateTime.UtcNow);
 
-        _logger.LogInformation("Publishing test aggregated event {EventId} for {Symbol}", evt.EventId, evt.Symbol);
-        await _producer.ProduceAsync("aggregated-market-analytics", evt.Symbol, evt, cancellationToken);
+        var key = $"{evt.Symbol}|{evt.WindowStartUtc:O}";
+        _logger.LogInformation("Publishing test aggregated event {Key} for {Symbol}", key, evt.Symbol);
+        await _producer.ProduceAsync("aggregated-market-analytics", key, evt, cancellationToken);
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
