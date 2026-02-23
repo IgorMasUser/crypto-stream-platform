@@ -14,14 +14,36 @@ public sealed class AnalyticsService
         _config = config;
     }
 
-    public async Task<IReadOnlyCollection<AggregatedMarketAnalyticsEvent>> GetAsync(int size = 50, CancellationToken ct = default)
+    public async Task<IReadOnlyCollection<AggregatedMarketAnalyticsEvent>> GetAsync(
+        int size = 100,
+        string? symbol = null,
+        CancellationToken ct = default)
     {
         var index = _config.GetValue<string>("Elastic:IndexPrefix") ?? "analytics-index";
-        var resp = await _client.SearchAsync<AggregatedMarketAnalyticsEvent>(s => s
-            .Index(index)
-            .Size(size), ct);
+
+        var resp = await _client.SearchAsync<AggregatedMarketAnalyticsEvent>(s =>
+        {
+            s.Index(index).Size(size);
+            s.Sort(sort => sort.Field(f => f.WindowStartUtc, o => o.Order(SortOrder.Desc)));
+
+            if (!string.IsNullOrWhiteSpace(symbol))
+            {
+                s.Query(q => q.Term(t => t.Field(f => f.Symbol).Value(symbol)));
+            }
+        }, ct);
 
         return resp.Documents;
+    }
+
+    // Get distinct symbols by sampling recent documents
+    public async Task<IReadOnlyCollection<string>> GetSymbolsAsync(CancellationToken ct = default)
+    {
+        var resp = await GetAsync(size: 500, symbol: null, ct);
+        return resp.Select(x => x.Symbol)
+                   .Where(s => !string.IsNullOrWhiteSpace(s))
+                   .Distinct()
+                   .OrderBy(s => s)
+                   .ToList();
     }
 
     public async Task ClearAsync(CancellationToken ct = default)
