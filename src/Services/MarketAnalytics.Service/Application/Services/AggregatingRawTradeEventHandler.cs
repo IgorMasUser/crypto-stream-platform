@@ -40,16 +40,16 @@ public sealed class AggregatingRawTradeEventHandler : IRawTradeEventHandler
             0,
             DateTimeKind.Utc);
 
-        var aggregate = tradesAggregatorService.BuildAggregatedTrades(windowStart, aggragationRangeinMinutes, trade);
+        var aggregate = await this.tradesAggregatorService.BuildAggregatedTradesAsync(windowStart, aggragationRangeinMinutes, trade, cancellationToken);
 
         var key = $"{trade.Symbol}|{windowStart:O}";
 
-        var aggregatedEvent = ToEvent(aggregate);
+        var aggregatedEvent = this.ToEvent(aggregate);
 
-        await producer.ProduceAsync(AggregatedTopic, key, aggregatedEvent, cancellationToken)
+        await this.producer.ProduceAsync(AggregatedTopic, key, aggregatedEvent, cancellationToken)
             .ConfigureAwait(false);
 
-        logger.LogInformation(
+        this.logger.LogInformation(
             "Published test aggregate for {Symbol} trade {TradeId} to topic {Topic} with key {Key}",
             aggregatedEvent.Symbol,
             trade.TradeId,

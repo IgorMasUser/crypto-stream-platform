@@ -1,0 +1,18 @@
+{
+  "profiles": {
+    "MarketAnalytics.Service": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development",
+        "KAFKA__BOOTSTRAPSERVERS": "localhost:9093",
+        "CONNECTIONSTRINGS__POSTGRES": "Host=localhost;Port=5432;Database=marketanalytics;Username=postgres;Password=postgres",
+        "KAFKA__CLIENTID": "marketanalytics-service-local",
+        "KAFKA__CONSUMER__ENABLED": "true",
+        "KAFKA__CONSUMER__TOPIC": "raw-market-trades",
+        "KAFKA__CONSUMER__GROUPID": "marketanalytics-service-local",
+        "KAFKA__CONSUMER__AUTOOFFSETRESET": "Latest",
+        "KAFKA__CONSUMER__ENABLEAUTOCOMMIT": "true"
+      }
+    }
+  }
+}

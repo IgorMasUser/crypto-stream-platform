@@ -7,10 +7,10 @@ namespace TradingApp.MarketAnalytics.Service.Worker.HostedServices;
 
 public sealed class RawTradeConsumerHostedService : BackgroundService
 {
-    private readonly IRawTradeEventConsumer _consumer;
-    private readonly IRawTradeEventHandler _handler;
-    private readonly ILogger<RawTradeConsumerHostedService> _logger;
-    private readonly KafkaTradeConsumerOptions _options;
+    private readonly IRawTradeEventConsumer consumer;
+    private readonly IRawTradeEventHandler handler;
+    private readonly ILogger<RawTradeConsumerHostedService> logger;
+    private readonly KafkaTradeConsumerOptions options;
 
     public RawTradeConsumerHostedService(
         IRawTradeEventConsumer consumer,
@@ -18,28 +18,26 @@ public sealed class RawTradeConsumerHostedService : BackgroundService
         IOptions<KafkaTradeConsumerOptions> options,
         ILogger<RawTradeConsumerHostedService> logger)
     {
-        _consumer = consumer;
-        _handler = handler;
-        _logger = logger;
-        _options = options.Value;
+        this.consumer = consumer;
+        this.handler  = handler;
+        this.logger   = logger;
+        this.options  = options.Value;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        if (!_options.Enabled)
+        if (!this.options.Enabled)
         {
-            _logger.LogInformation("Raw trade consumer hosted service is disabled.");
+            this.logger.LogInformation("Raw trade consumer hosted service is disabled.");
             return;
         }
 
-        _logger.LogInformation("Raw trade consumer hosted service starting.");
-        await _consumer.ConsumeAsync(
+        this.logger.LogInformation("Raw trade consumer hosted service starting.");
+        await this.consumer.ConsumeAsync(
             async (trade, token) =>
             {
-                await _handler.HandleAsync(trade, token).ConfigureAwait(false);
+                await this.handler.HandleAsync(trade, token).ConfigureAwait(false);
             },
             stoppingToken).ConfigureAwait(false);
     }
 }
-
-

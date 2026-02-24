@@ -1,10 +1,13 @@
-﻿using TradingApp.Contracts.Events;
+using TradingApp.Contracts.Events;
 using TradingApp.MarketAnalytics.Service.Domain;
 
-namespace TradingApp.MarketAnalytics.Service.Application.Abstractions
+namespace TradingApp.MarketAnalytics.Service.Application.Abstractions;
+
+public interface ITradesAggregatorService
 {
-    public interface ITradesAggregatorService
-    {
-        AggregatedMarketAnalyticsEntity BuildAggregatedTrades(DateTime windowStart, int aggregationRangeInMinutes, RawMarketTradeEvent trade);
-    }
+    Task<AggregatedMarketAnalyticsEntity> BuildAggregatedTradesAsync(
+        DateTime windowStart,
+        int aggregationRangeInMinutes,
+        RawMarketTradeEvent trade,
+        CancellationToken cancellationToken = default);
 }

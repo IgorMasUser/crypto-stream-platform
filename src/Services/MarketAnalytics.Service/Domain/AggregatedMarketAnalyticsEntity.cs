@@ -1,14 +1,12 @@
-﻿using TradingApp.Contracts.Events;
-
 namespace TradingApp.MarketAnalytics.Service.Domain;
 
 /// <summary>
-/// In-memory aggregation model for a 1-minute OHLCV window.
-/// Holds state while events for the same window are processed.
+/// OHLCV aggregation window persisted to PostgreSQL.
+/// Composite PK: (Symbol, WindowStartUtc) — one row per symbol per minute.
 /// </summary>
 public class AggregatedMarketAnalyticsEntity
 {
-    public string Symbol { get; set; }
+    public string Symbol { get; set; } = string.Empty;
     public DateTime WindowStartUtc { get; set; }
     public DateTime WindowEndUtc { get; set; }
     public decimal OpenPrice { get; set; }
@@ -18,4 +16,5 @@ public class AggregatedMarketAnalyticsEntity
     public decimal Volume { get; set; }
     public int TradesCount { get; set; }
     public DateTime CreatedAtUtc { get; set; }
+    public DateTime UpdatedAtUtc { get; set; }
 }
