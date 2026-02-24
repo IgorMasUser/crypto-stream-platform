@@ -72,3 +72,8 @@ local.settings.json
 .tools/
 *** End Patch*** End Patch to=functions.apply_patch json to=functions.apply_patch_COLLISION
 
+
+# Large media files
+*.mp4
+*.mov
+Images/
