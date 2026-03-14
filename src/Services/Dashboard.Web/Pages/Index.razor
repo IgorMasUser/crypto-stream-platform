@@ -1,16 +1,14 @@
 @page "/"
-@inject TradingApp.Dashboard.Web.Services.AnalyticsService AnalyticsService
-@implements IAsyncDisposable
 
 <PageTitle>TradingApp Dashboard</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="pa-4">
 
-    
+    @* Header *@
     <MudPaper Elevation="4" Class="pa-4 mb-4 rounded-lg">
         <MudGrid Justify="Justify.SpaceBetween" Class="align-center">
             <MudItem xs="12" md="6">
-                <MudText Typo="Typo.h5" Color="Color.Primary" GutterBottom="false">
+                <MudText Typo="Typo.h4" Color="Color.Primary" Style="font-weight:700; letter-spacing:-0.5px">
                     📈 TradingApp Dashboard
                 </MudText>
                 @if (_lastUpdated.HasValue)
@@ -31,17 +29,106 @@
                                OnClick="LoadAsync" Disabled="_loading" Size="Size.Small">
                         @(_loading ? "Loading…" : "Refresh")
                     </MudButton>
-                    <MudButton Variant="Variant.Outlined" Color="Color.Error"
-                               StartIcon="@Icons.Material.Filled.DeleteSweep"
-                               OnClick="ClearAsync" Disabled="(_clearing || _loading)" Size="Size.Small">
-                        @(_clearing ? "Clearing…" : "Clear index")
-                    </MudButton>
                 </MudStack>
             </MudItem>
         </MudGrid>
     </MudPaper>
 
-    
+    @* KPI cards *@
+    @if (_items.Any())
+    {
+        <MudGrid Spacing="3" Class="mb-4">
+            <MudItem xs="12" sm="4">
+                <MudPaper Elevation="2" Class="pa-4 rounded-lg" Style="border-left:4px solid #4caf50; min-height:90px">
+                    <MudText Typo="Typo.overline" Style="color:var(--mud-palette-text-secondary)">BIGGEST GAINER</MudText>
+                    @if (_kpiBiggestGainer is not null)
+                    {
+                        <MudText Typo="Typo.h6" Color="Color.Primary" Style="font-weight:700; line-height:1.2">
+                            @_kpiBiggestGainer.Symbol
+                        </MudText>
+                        <MudText Style="color:#4caf50; font-size:1.15rem; font-weight:700">
+                            @_kpiBiggestGainer.ChangePercent.ToString("+0.00;-0.00;0.00")%
+                        </MudText>
+                        <MudText Typo="Typo.caption" Style="color:var(--mud-palette-text-secondary)">
+                            Last: @_kpiBiggestGainer.LastPrice.ToString("F2")
+                        </MudText>
+                    }
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudPaper Elevation="2" Class="pa-4 rounded-lg" Style="border-left:4px solid #f44336; min-height:90px">
+                    <MudText Typo="Typo.overline" Style="color:var(--mud-palette-text-secondary)">BIGGEST LOSER</MudText>
+                    @if (_kpiBiggestLoser is not null)
+                    {
+                        <MudText Typo="Typo.h6" Color="Color.Primary" Style="font-weight:700; line-height:1.2">
+                            @_kpiBiggestLoser.Symbol
+                        </MudText>
+                        <MudText Style="color:#f44336; font-size:1.15rem; font-weight:700">
+                            @_kpiBiggestLoser.ChangePercent.ToString("+0.00;-0.00;0.00")%
+                        </MudText>
+                        <MudText Typo="Typo.caption" Style="color:var(--mud-palette-text-secondary)">
+                            Last: @_kpiBiggestLoser.LastPrice.ToString("F2")
+                        </MudText>
+                    }
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudPaper Elevation="2" Class="pa-4 rounded-lg" Style="border-left:4px solid #7c4dff; min-height:90px">
+                    <MudText Typo="Typo.overline" Style="color:var(--mud-palette-text-secondary)">MOST ACTIVE</MudText>
+                    @if (_kpiMostActive is not null)
+                    {
+                        <MudText Typo="Typo.h6" Color="Color.Primary" Style="font-weight:700; line-height:1.2">
+                            @_kpiMostActive.Symbol
+                        </MudText>
+                        <MudText Style="color:#7c4dff; font-size:1.15rem; font-weight:700">
+                            @_kpiMostActive.TradesCount trades
+                        </MudText>
+                        <MudText Typo="Typo.caption" Style="color:var(--mud-palette-text-secondary)">
+                            Vol: @_kpiMostActive.Volume.ToString("F4")
+                        </MudText>
+                    }
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+
+        @* Top Gainers / Losers *@
+        <MudGrid Spacing="3" Class="mb-4">
+            <MudItem xs="12" sm="6">
+                <MudPaper Elevation="2" Class="pa-3 rounded-lg">
+                    <MudText Typo="Typo.subtitle2" Style="color:#4caf50; margin-bottom:6px; font-weight:700">
+                        📈 Top Gainers
+                    </MudText>
+                    @foreach (var item in _topGainers)
+                    {
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:3px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
+                            <MudText Typo="Typo.body2" Color="Color.Primary" Style="font-weight:600">@item.Symbol</MudText>
+                            <MudText Typo="Typo.body2" Style="color:#4caf50; font-weight:600">
+                                @item.ChangePercent.ToString("+0.00;-0.00;0.00")%
+                            </MudText>
+                        </div>
+                    }
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudPaper Elevation="2" Class="pa-3 rounded-lg">
+                    <MudText Typo="Typo.subtitle2" Style="color:#f44336; margin-bottom:6px; font-weight:700">
+                        📉 Top Losers
+                    </MudText>
+                    @foreach (var item in _topLosers)
+                    {
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:3px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
+                            <MudText Typo="Typo.body2" Color="Color.Primary" Style="font-weight:600">@item.Symbol</MudText>
+                            <MudText Typo="Typo.body2" Style="color:#f44336; font-weight:600">
+                                @item.ChangePercent.ToString("+0.00;-0.00;0.00")%
+                            </MudText>
+                        </div>
+                    }
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+
+    @* Filters *@
     <MudPaper Elevation="2" Class="pa-4 mb-4 rounded-lg">
         <MudGrid Spacing="2">
             <MudItem xs="12" sm="4">
@@ -64,19 +151,21 @@
                 </MudSelect>
             </MudItem>
             <MudItem xs="12" sm="4">
-                <MudSelect T="string" Label="Sort by" @bind-Value="_sortField"
+                <MudSelect T="SortField" Label="Sort by" @bind-Value="_sortField"
                            @bind-Value:after="ApplySortAsync" Dense="true" Variant="Variant.Outlined">
-                    <MudSelectItem T="string" Value='"windowStartUtc"'>Window Start ↓ (newest)</MudSelectItem>
-                    <MudSelectItem T="string" Value='"symbol"'>Symbol</MudSelectItem>
-                    <MudSelectItem T="string" Value='"lastPrice"'>Last Price</MudSelectItem>
-                    <MudSelectItem T="string" Value='"volume"'>Volume</MudSelectItem>
-                    <MudSelectItem T="string" Value='"tradesCount"'>Trades</MudSelectItem>
+                    <MudSelectItem T="SortField" Value="SortField.WindowStartUtc">Window Start ↓ (newest)</MudSelectItem>
+                    <MudSelectItem T="SortField" Value="SortField.Symbol">Symbol</MudSelectItem>
+                    <MudSelectItem T="SortField" Value="SortField.LastPrice">Last Price</MudSelectItem>
+                    <MudSelectItem T="SortField" Value="SortField.Volume">Volume</MudSelectItem>
+                    <MudSelectItem T="SortField" Value="SortField.TradesCount">Trades</MudSelectItem>
+                    <MudSelectItem T="SortField" Value="SortField.ChangePercent">% Change</MudSelectItem>
+                    <MudSelectItem T="SortField" Value="SortField.RangePercent">Range %</MudSelectItem>
                 </MudSelect>
             </MudItem>
         </MudGrid>
     </MudPaper>
 
-    
+    @* Error *@
     @if (_error is not null)
     {
         <MudAlert Severity="Severity.Error" Class="mb-4" ShowCloseIcon="true"
@@ -85,10 +174,11 @@
         </MudAlert>
     }
 
-    
-    <MudTable T="TradingApp.Contracts.Events.AggregatedMarketAnalyticsEvent"
+    @* Table *@
+    <MudTable T="MarketAnalyticsDto"
               Items="_sortedItems"
-              Dense="true" Hover="true" Striped="true"
+              Dense="true" Hover="true"
+              RowStyleFunc="@((_, i) => i % 2 == 0 ? "background:rgba(99,102,241,0.08)" : "background:rgba(255,255,255,0.02)")"
               Loading="_loading" LoadingProgressColor="Color.Primary"
               Elevation="4" Class="rounded-lg">
         <HeaderContent>
@@ -97,6 +187,8 @@
             <MudTh Style="text-align:right; color:#4caf50">High</MudTh>
             <MudTh Style="text-align:right; color:#f44336">Low</MudTh>
             <MudTh Style="text-align:right">Last</MudTh>
+            <MudTh Style="text-align:right">% Change</MudTh>
+            <MudTh Style="text-align:right; color:#ff9800">Range %</MudTh>
             <MudTh Style="text-align:right">Volume</MudTh>
             <MudTh Style="text-align:right">Trades</MudTh>
             <MudTh>Window Start (UTC)</MudTh>
@@ -113,6 +205,14 @@
             <MudTd DataLabel="Low"  Style="text-align:right; color:#f44336">@context.LowPrice.ToString("F2")</MudTd>
             <MudTd DataLabel="Last" Style="@($"text-align:right; font-weight:600; color:{(context.LastPrice >= context.OpenPrice ? "#4caf50" : "#f44336")}")">
                 @context.LastPrice.ToString("F2")
+            </MudTd>
+            <MudTd DataLabel="% Change" Style="text-align:right">
+                <MudText Typo="Typo.body2" Style="@($"font-weight:700; color:{(context.ChangePercent >= 0 ? "#4caf50" : "#f44336")}")">
+                    @context.ChangePercent.ToString("+0.00;-0.00;0.00")%
+                </MudText>
+            </MudTd>
+            <MudTd DataLabel="Range %" Style="text-align:right; color:#ff9800">
+                @context.RangePercent.ToString("F2")%
             </MudTd>
             <MudTd DataLabel="Volume" Style="text-align:right">@context.Volume.ToString("F4")</MudTd>
             <MudTd DataLabel="Trades" Style="text-align:right">@context.TradesCount</MudTd>
@@ -135,128 +235,3 @@
     </MudTable>
 
 </MudContainer>
-
-@code {
-    private bool _loading = true;
-    private bool _clearing = false;
-    private bool _autoRefresh = false;
-    private readonly int _autoRefreshSec = 10;
-    private int _pageSize = 100;
-    private string _selectedSymbol = "";
-    private string _sortField = "windowStartUtc";
-    private DateTime? _lastUpdated;
-    private string? _error;
-    private List<TradingApp.Contracts.Events.AggregatedMarketAnalyticsEvent> _items = new();
-    private List<string> _symbols = new();
-    private CancellationTokenSource? _autoRefreshCts;
-
-    private IEnumerable<TradingApp.Contracts.Events.AggregatedMarketAnalyticsEvent> _sortedItems =>
-        _sortField switch
-        {
-            "symbol"      => _items.OrderBy(x => x.Symbol),
-            "lastPrice"   => _items.OrderByDescending(x => x.LastPrice),
-            "volume"      => _items.OrderByDescending(x => x.Volume),
-            "tradesCount" => _items.OrderByDescending(x => x.TradesCount),
-            _             => _items
-        };
-
-    protected override async Task OnInitializedAsync()
-    {
-        try
-        {
-            _symbols = (await AnalyticsService.GetSymbolsAsync()).OrderBy(s => s).ToList();
-            await LoadAsync();
-        }
-        catch (Exception ex)
-        {
-            _error = ex.Message;
-            _loading = false;
-        }
-    }
-
-    private async Task LoadAsync()
-    {
-        _loading = true;
-        _error = null;
-        try
-        {
-            var symbol = string.IsNullOrWhiteSpace(_selectedSymbol) ? null : _selectedSymbol;
-            _items = (await AnalyticsService.GetAsync(_pageSize, symbol)).ToList();
-            _lastUpdated = DateTime.UtcNow;
-        }
-        catch (Exception ex)
-        {
-            _error = ex.Message;
-        }
-        finally
-        {
-            _loading = false;
-        }
-    }
-
-    private Task ApplySortAsync()
-    {
-        StateHasChanged();
-        return Task.CompletedTask;
-    }
-
-    private async Task OnAutoRefreshChangedAsync()
-    {
-        await StopAutoRefreshAsync();
-        if (_autoRefresh)
-            StartAutoRefresh();
-    }
-
-    private void StartAutoRefresh()
-    {
-        _autoRefreshCts = new CancellationTokenSource();
-        var token = _autoRefreshCts.Token;
-        _ = Task.Run(async () =>
-        {
-            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(_autoRefreshSec));
-            try
-            {
-                while (!token.IsCancellationRequested && await timer.WaitForNextTickAsync(token))
-                {
-                    await InvokeAsync(async () =>
-                    {
-                        await LoadAsync();
-                        StateHasChanged();
-                    });
-                }
-            }
-            catch (OperationCanceledException) { }
-        }, token);
-    }
-
-    private async Task StopAutoRefreshAsync()
-    {
-        if (_autoRefreshCts is not null)
-        {
-            await _autoRefreshCts.CancelAsync();
-            _autoRefreshCts.Dispose();
-            _autoRefreshCts = null;
-        }
-    }
-
-    private async Task ClearAsync()
-    {
-        _clearing = true;
-        try
-        {
-            await AnalyticsService.ClearAsync();
-            _items.Clear();
-            _lastUpdated = null;
-        }
-        catch (Exception ex)
-        {
-            _error = ex.Message;
-        }
-        finally
-        {
-            _clearing = false;
-        }
-    }
-
-    public async ValueTask DisposeAsync() => await StopAutoRefreshAsync();
-}
