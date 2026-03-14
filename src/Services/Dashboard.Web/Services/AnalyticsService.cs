@@ -28,7 +28,7 @@ public sealed class AnalyticsService
 
             if (!string.IsNullOrWhiteSpace(symbol))
             {
-                s.Query(q => q.Term(t => t.Field(f => f.Symbol).Value(symbol)));
+                s.Query(q => q.Term(t => t.Field("symbol.keyword").Value(symbol)));
             }
         }, ct);
 
