@@ -64,6 +64,11 @@ spec:
                 configMapKeyRef:
                   name: marketanalytics-service-config
                   key: CONNECTIONSTRINGS__POSTGRES
+            - name: Logging__Elasticsearch__Url
+              valueFrom:
+                configMapKeyRef:
+                  name: marketanalytics-service-config
+                  key: LOGGING__ELASTICSEARCH__URL
           resources:
             requests:
               cpu: 100m

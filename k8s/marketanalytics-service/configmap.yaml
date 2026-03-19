@@ -12,4 +12,5 @@ data:
   KAFKA__CONSUMER__AUTOOFFSETRESET: "Earliest"
   KAFKA__CONSUMER__ENABLEAUTOCOMMIT: "true"
   CONNECTIONSTRINGS__POSTGRES: "Host=postgres;Port=5432;Database=marketanalytics;Username=postgres;Password=postgres"
+  LOGGING__ELASTICSEARCH__URL: "http://elastic:9200"
 

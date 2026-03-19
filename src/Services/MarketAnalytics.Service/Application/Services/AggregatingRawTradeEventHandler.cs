@@ -49,11 +49,10 @@ public sealed class AggregatingRawTradeEventHandler : IRawTradeEventHandler
         await this.producer.ProduceAsync(AggregatedTopic, key, aggregatedEvent, cancellationToken)
             .ConfigureAwait(false);
 
-        this.logger.LogInformation(
-            "Published test aggregate for {Symbol} trade {TradeId} to topic {Topic} with key {Key}",
+        this.logger.LogDebug(
+            "Published aggregate for {Symbol} trade {TradeId} key={Key}",
             aggregatedEvent.Symbol,
             trade.TradeId,
-            AggregatedTopic,
             key);
     }
 
