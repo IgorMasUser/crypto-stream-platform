@@ -59,6 +59,11 @@ spec:
                 configMapKeyRef:
                   name: marketanalytics-service-config
                   key: KAFKA__CONSUMER__ENABLEAUTOCOMMIT
+            - name: ConnectionStrings__Postgres
+              valueFrom:
+                configMapKeyRef:
+                  name: marketanalytics-service-config
+                  key: CONNECTIONSTRINGS__POSTGRES
           resources:
             requests:
               cpu: 100m
