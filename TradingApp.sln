@@ -22,6 +22,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dashboard.Web", "src\Servic
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnalyticsIndexer.Worker", "src\Services\AnalyticsIndexer.Worker\AnalyticsIndexer.Worker.csproj", "{D6282814-2BF7-4FB4-897D-9ACBCC378413}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{2AA8D888-6858-400D-B89D-287BB5141978}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarketAnalytics.Service.Tests", "src\Tests\MarketAnalytics.Service.Tests\MarketAnalytics.Service.Tests.csproj", "{AFAEA578-6485-42ED-8DDB-200E95A22A11}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -56,6 +60,10 @@ Global
 		{D6282814-2BF7-4FB4-897D-9ACBCC378413}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D6282814-2BF7-4FB4-897D-9ACBCC378413}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D6282814-2BF7-4FB4-897D-9ACBCC378413}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AFAEA578-6485-42ED-8DDB-200E95A22A11}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AFAEA578-6485-42ED-8DDB-200E95A22A11}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AFAEA578-6485-42ED-8DDB-200E95A22A11}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AFAEA578-6485-42ED-8DDB-200E95A22A11}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -70,5 +78,7 @@ Global
 		{09D0BAD7-0A05-4F4B-8F62-B6FBA8AD5C74} = {726E03D7-01CC-4001-B334-4F1789F9B3F4}
 		{3617A3DE-93A4-4F1F-9F52-0C2E0C012345} = {726E03D7-01CC-4001-B334-4F1789F9B3F4}
 		{D6282814-2BF7-4FB4-897D-9ACBCC378413} = {726E03D7-01CC-4001-B334-4F1789F9B3F4}
+		{2AA8D888-6858-400D-B89D-287BB5141978} = {FBA5CF6C-0707-4F07-A4ED-76905EF86519}
+		{AFAEA578-6485-42ED-8DDB-200E95A22A11} = {2AA8D888-6858-400D-B89D-287BB5141978}
 	EndGlobalSection
 EndGlobal
