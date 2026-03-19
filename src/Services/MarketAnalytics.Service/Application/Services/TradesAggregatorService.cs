@@ -35,13 +35,16 @@ public sealed class TradesAggregatorService : ITradesAggregatorService
         if (existing is null)
         {
             aggregate = CreateNewWindow(trade, windowStart, windowEnd);
-            this.logger.LogDebug("New window {Symbol}|{Window}", trade.Symbol, windowStart);
+            this.logger.LogInformation(
+                "New window opened: {Symbol} window={WindowStart:u} open={Open}",
+                trade.Symbol, windowStart, trade.Price);
         }
         else
         {
             aggregate = UpdateWindow(existing, trade, windowEnd);
-            this.logger.LogDebug("Updated window {Symbol}|{Window} trades={Count}",
-                trade.Symbol, windowStart, aggregate.TradesCount);
+            this.logger.LogDebug(
+                "Window updated: {Symbol} window={WindowStart:u} trades={Count} last={Last}",
+                trade.Symbol, windowStart, aggregate.TradesCount, aggregate.LastPrice);
         }
 
         await this.repository.SaveAsync(aggregate, cancellationToken);

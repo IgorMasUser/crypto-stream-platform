@@ -1,5 +1,6 @@
 using Elastic.Clients.Elasticsearch;
 using TradingApp.Contracts.Events;
+using TradingApp.Dashboard.Web.Models;
 
 namespace TradingApp.Dashboard.Web.Services;
 
@@ -14,7 +15,7 @@ public sealed class AnalyticsService
         _config = config;
     }
 
-    public async Task<IReadOnlyCollection<AggregatedMarketAnalyticsEvent>> GetAsync(
+    public async Task<IReadOnlyCollection<MarketAnalyticsDto>> GetAsync(
         int size = 100,
         string? symbol = null,
         CancellationToken ct = default)
@@ -28,14 +29,13 @@ public sealed class AnalyticsService
 
             if (!string.IsNullOrWhiteSpace(symbol))
             {
-                s.Query(q => q.Term(t => t.Field(f => f.Symbol).Value(symbol)));
+                s.Query(q => q.Term(t => t.Field("symbol.keyword").Value(symbol)));
             }
         }, ct);
 
-        return resp.Documents;
+        return resp.Documents.Select(Map).ToList();
     }
 
-    // Get distinct symbols by sampling recent documents
     public async Task<IReadOnlyCollection<string>> GetSymbolsAsync(CancellationToken ct = default)
     {
         var resp = await GetAsync(size: 500, symbol: null, ct);
@@ -46,11 +46,17 @@ public sealed class AnalyticsService
                    .ToList();
     }
 
-    public async Task ClearAsync(CancellationToken ct = default)
+    private static MarketAnalyticsDto Map(AggregatedMarketAnalyticsEvent e) => new()
     {
-        var index = _config.GetValue<string>("Elastic:IndexPrefix") ?? "analytics-index";
-        await _client.DeleteByQueryAsync<AggregatedMarketAnalyticsEvent>(index, q => q
-            .Query(_ => _.MatchAll()), ct);
-    }
+        Symbol        = e.Symbol,
+        WindowStartUtc = e.WindowStartUtc,
+        WindowEndUtc  = e.WindowEndUtc,
+        OpenPrice     = e.OpenPrice,
+        HighPrice     = e.HighPrice,
+        LowPrice      = e.LowPrice,
+        LastPrice     = e.LastPrice,
+        Volume        = e.Volume,
+        TradesCount   = e.TradesCount,
+        CreatedAtUtc  = e.CreatedAtUtc,
+    };
 }
-

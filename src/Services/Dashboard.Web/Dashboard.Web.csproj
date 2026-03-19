@@ -7,5 +7,8 @@
     <ProjectReference Include="..\..\BuildingBlocks\TradingApp.Contracts\TradingApp.Contracts.csproj" />
     <ProjectReference Include="..\..\BuildingBlocks\TradingApp.Elastic\TradingApp.Elastic.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="MudBlazor" Version="9.1.0" />
+  </ItemGroup>
 </Project>
 

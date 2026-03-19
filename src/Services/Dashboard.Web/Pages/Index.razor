@@ -1,234 +1,237 @@
 @page "/"
-@inject TradingApp.Dashboard.Web.Services.AnalyticsService AnalyticsService
-@implements IAsyncDisposable
 
 <PageTitle>TradingApp Dashboard</PageTitle>
 
-<div style="padding: 16px 20px; background:#1a1a2e; color:#e0e0e0; min-height:100vh; font-family:'Segoe UI',sans-serif;">
+<MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="pa-4">
 
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
-        <div>
-            <h2 style="margin:0; color:#00d4ff; font-size:1.6rem;">📈 TradingApp Dashboard</h2>
-            <small style="color:#888;">
+    @* Header *@
+    <MudPaper Elevation="4" Class="pa-4 mb-4 rounded-lg">
+        <MudGrid Justify="Justify.SpaceBetween" Class="align-center">
+            <MudItem xs="12" md="6">
+                <MudText Typo="Typo.h4" Color="Color.Primary" Style="font-weight:700; letter-spacing:-0.5px">
+                    📈 TradingApp Dashboard
+                </MudText>
                 @if (_lastUpdated.HasValue)
                 {
-                    <span>Last updated: @_lastUpdated.Value.ToLocalTime().ToString("HH:mm:ss") &nbsp;|&nbsp; @_items.Count records</span>
+                    <MudText Typo="Typo.caption" Style="color:var(--mud-palette-text-secondary)">
+                        Last updated: @_lastUpdated.Value.ToLocalTime().ToString("HH:mm:ss")
+                        &nbsp;|&nbsp; @_items.Count records
+                    </MudText>
                 }
-            </small>
-        </div>
-        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-            <label style="color:#aaa; font-size:0.85rem; margin:0;">
-                <input type="checkbox" @bind="_autoRefresh" @bind:after="OnAutoRefreshChangedAsync" />
-                &nbsp;Auto-refresh (@_autoRefreshSec s)
-            </label>
-            <button class="btn btn-sm btn-outline-light" @onclick="Load" disabled="@_loading">
-                @(_loading ? "Loading…" : "⟳ Refresh")
-            </button>
-            <button class="btn btn-sm btn-outline-danger" @onclick="Clear" disabled="@(_clearing || _loading)">
-                @(_clearing ? "Clearing…" : "🗑 Clear index")
-            </button>
-        </div>
-    </div>
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudStack Row="true" Justify="Justify.FlexEnd" AlignItems="AlignItems.Center" Spacing="2" Wrap="Wrap.Wrap">
+                    <MudSwitch T="bool" @bind-Value="_autoRefresh" Color="Color.Primary"
+                               Label="@($"Auto-refresh ({_autoRefreshSec}s)")"
+                               @bind-Value:after="OnAutoRefreshChangedAsync" />
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                               StartIcon="@Icons.Material.Filled.Refresh"
+                               OnClick="LoadAsync" Disabled="_loading" Size="Size.Small">
+                        @(_loading ? "Loading…" : "Refresh")
+                    </MudButton>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
 
-    <div style="display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap; align-items:flex-end;">
-        <div>
-            <label style="color:#aaa; font-size:0.8rem; display:block; margin-bottom:4px;">Symbol</label>
-            <select style="background:#16213e; color:#e0e0e0; border:1px solid #444; border-radius:4px; padding:4px 8px;"
-                    @bind="_selectedSymbol" @bind:after="Load">
-                <option value="">All symbols</option>
-                @foreach (var s in _symbols)
-                {
-                    <option value="@s">@s</option>
-                }
-            </select>
-        </div>
-        <div>
-            <label style="color:#aaa; font-size:0.8rem; display:block; margin-bottom:4px;">Rows</label>
-            <select style="background:#16213e; color:#e0e0e0; border:1px solid #444; border-radius:4px; padding:4px 8px;"
-                    @bind="_pageSize" @bind:after="Load">
-                <option value="25">25</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-                <option value="200">200</option>
-            </select>
-        </div>
-        <div>
-            <label style="color:#aaa; font-size:0.8rem; display:block; margin-bottom:4px;">Sort by</label>
-            <select style="background:#16213e; color:#e0e0e0; border:1px solid #444; border-radius:4px; padding:4px 8px;"
-                    @bind="_sortField" @bind:after="ApplySort">
-                <option value="windowStartUtc">Window Start ↓ (newest)</option>
-                <option value="symbol">Symbol</option>
-                <option value="lastPrice">Last Price</option>
-                <option value="volume">Volume</option>
-                <option value="tradesCount">Trades</option>
-            </select>
-        </div>
-    </div>
+    @* KPI cards *@
+    @if (_items.Any())
+    {
+        <MudGrid Spacing="3" Class="mb-4">
+            <MudItem xs="12" sm="4">
+                <MudPaper Elevation="2" Class="pa-4 rounded-lg" Style="border-left:4px solid #4caf50; min-height:90px">
+                    <MudText Typo="Typo.overline" Style="color:var(--mud-palette-text-secondary)">BIGGEST GAINER</MudText>
+                    @if (_kpiBiggestGainer is not null)
+                    {
+                        <MudText Typo="Typo.h6" Color="Color.Primary" Style="font-weight:700; line-height:1.2">
+                            @_kpiBiggestGainer.Symbol
+                        </MudText>
+                        <MudText Style="color:#4caf50; font-size:1.15rem; font-weight:700">
+                            @_kpiBiggestGainer.ChangePercent.ToString("+0.00;-0.00;0.00")%
+                        </MudText>
+                        <MudText Typo="Typo.caption" Style="color:var(--mud-palette-text-secondary)">
+                            Last: @_kpiBiggestGainer.LastPrice.ToString("F2")
+                        </MudText>
+                    }
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudPaper Elevation="2" Class="pa-4 rounded-lg" Style="border-left:4px solid #f44336; min-height:90px">
+                    <MudText Typo="Typo.overline" Style="color:var(--mud-palette-text-secondary)">BIGGEST LOSER</MudText>
+                    @if (_kpiBiggestLoser is not null)
+                    {
+                        <MudText Typo="Typo.h6" Color="Color.Primary" Style="font-weight:700; line-height:1.2">
+                            @_kpiBiggestLoser.Symbol
+                        </MudText>
+                        <MudText Style="color:#f44336; font-size:1.15rem; font-weight:700">
+                            @_kpiBiggestLoser.ChangePercent.ToString("+0.00;-0.00;0.00")%
+                        </MudText>
+                        <MudText Typo="Typo.caption" Style="color:var(--mud-palette-text-secondary)">
+                            Last: @_kpiBiggestLoser.LastPrice.ToString("F2")
+                        </MudText>
+                    }
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudPaper Elevation="2" Class="pa-4 rounded-lg" Style="border-left:4px solid #7c4dff; min-height:90px">
+                    <MudText Typo="Typo.overline" Style="color:var(--mud-palette-text-secondary)">MOST ACTIVE</MudText>
+                    @if (_kpiMostActive is not null)
+                    {
+                        <MudText Typo="Typo.h6" Color="Color.Primary" Style="font-weight:700; line-height:1.2">
+                            @_kpiMostActive.Symbol
+                        </MudText>
+                        <MudText Style="color:#7c4dff; font-size:1.15rem; font-weight:700">
+                            @_kpiMostActive.TradesCount trades
+                        </MudText>
+                        <MudText Typo="Typo.caption" Style="color:var(--mud-palette-text-secondary)">
+                            Vol: @_kpiMostActive.Volume.ToString("F4")
+                        </MudText>
+                    }
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
 
+        @* Top Gainers / Losers *@
+        <MudGrid Spacing="3" Class="mb-4">
+            <MudItem xs="12" sm="6">
+                <MudPaper Elevation="2" Class="pa-3 rounded-lg">
+                    <MudText Typo="Typo.subtitle2" Style="color:#4caf50; margin-bottom:6px; font-weight:700">
+                        📈 Top Gainers
+                    </MudText>
+                    @foreach (var item in _topGainers)
+                    {
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:3px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
+                            <MudText Typo="Typo.body2" Color="Color.Primary" Style="font-weight:600">@item.Symbol</MudText>
+                            <MudText Typo="Typo.body2" Style="color:#4caf50; font-weight:600">
+                                @item.ChangePercent.ToString("+0.00;-0.00;0.00")%
+                            </MudText>
+                        </div>
+                    }
+                </MudPaper>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudPaper Elevation="2" Class="pa-3 rounded-lg">
+                    <MudText Typo="Typo.subtitle2" Style="color:#f44336; margin-bottom:6px; font-weight:700">
+                        📉 Top Losers
+                    </MudText>
+                    @foreach (var item in _topLosers)
+                    {
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:3px 0; border-bottom:1px solid rgba(255,255,255,0.05)">
+                            <MudText Typo="Typo.body2" Color="Color.Primary" Style="font-weight:600">@item.Symbol</MudText>
+                            <MudText Typo="Typo.body2" Style="color:#f44336; font-weight:600">
+                                @item.ChangePercent.ToString("+0.00;-0.00;0.00")%
+                            </MudText>
+                        </div>
+                    }
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    }
+
+    @* Filters *@
+    <MudPaper Elevation="2" Class="pa-4 mb-4 rounded-lg">
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="4">
+                <MudSelect T="string" Label="Symbol" @bind-Value="_selectedSymbol"
+                           @bind-Value:after="LoadAsync" Dense="true" Variant="Variant.Outlined">
+                    <MudSelectItem T="string" Value='@("")'>All symbols</MudSelectItem>
+                    @foreach (var s in _symbols)
+                    {
+                        <MudSelectItem T="string" Value="@s">@s</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudSelect T="int" Label="Rows" @bind-Value="_pageSize"
+                           @bind-Value:after="LoadAsync" Dense="true" Variant="Variant.Outlined">
+                    <MudSelectItem T="int" Value="25">25</MudSelectItem>
+                    <MudSelectItem T="int" Value="50">50</MudSelectItem>
+                    <MudSelectItem T="int" Value="100">100</MudSelectItem>
+                    <MudSelectItem T="int" Value="200">200</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudSelect T="SortField" Label="Sort by" @bind-Value="_sortField"
+                           @bind-Value:after="ApplySortAsync" Dense="true" Variant="Variant.Outlined">
+                    <MudSelectItem T="SortField" Value="SortField.WindowStartUtc">Window Start ↓ (newest)</MudSelectItem>
+                    <MudSelectItem T="SortField" Value="SortField.Symbol">Symbol</MudSelectItem>
+                    <MudSelectItem T="SortField" Value="SortField.LastPrice">Last Price</MudSelectItem>
+                    <MudSelectItem T="SortField" Value="SortField.Volume">Volume</MudSelectItem>
+                    <MudSelectItem T="SortField" Value="SortField.TradesCount">Trades</MudSelectItem>
+                    <MudSelectItem T="SortField" Value="SortField.ChangePercent">% Change</MudSelectItem>
+                    <MudSelectItem T="SortField" Value="SortField.RangePercent">Range %</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    @* Error *@
     @if (_error is not null)
     {
-        <div style="color:#f44336; background:#2a0a0a; border:1px solid #f44336; border-radius:4px; padding:10px 14px; margin-bottom:12px;">
-            ⚠ Error: @_error
-        </div>
+        <MudAlert Severity="Severity.Error" Class="mb-4" ShowCloseIcon="true"
+                  CloseIconClicked="@(() => _error = null)">
+            @_error
+        </MudAlert>
     }
 
-    @if (_loading && _items.Count == 0)
-    {
-        <p style="color:#888;">Loading...</p>
-    }
-    else if (_items.Count == 0)
-    {
-        <p style="color:#888;">No data. Make sure the pipeline is running.</p>
-    }
-    else
-    {
-        <div style="overflow-x:auto;">
-            <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
-                <thead>
-                    <tr style="background:#16213e; color:#00d4ff; text-align:right;">
-                        <th style="text-align:left; padding:8px 10px;">Symbol</th>
-                        <th style="padding:8px 10px;">Open</th>
-                        <th style="padding:8px 10px; color:#4caf50;">High</th>
-                        <th style="padding:8px 10px; color:#f44336;">Low</th>
-                        <th style="padding:8px 10px; color:#fff;">Last</th>
-                        <th style="padding:8px 10px;">Volume</th>
-                        <th style="padding:8px 10px;">Trades</th>
-                        <th style="padding:8px 10px; text-align:left;">Window Start (UTC)</th>
-                        <th style="padding:8px 10px; text-align:left;">Window End (UTC)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var x in _sortedItems)
-                    {
-                        var priceColor = x.LastPrice >= x.OpenPrice ? "#4caf50" : "#f44336";
-                        <tr style="border-bottom:1px solid #2a2a4a;" @key="@($"{x.Symbol}|{x.WindowStartUtc:O}")">
-                            <td style="padding:6px 10px; font-weight:600; color:#00d4ff;">@x.Symbol</td>
-                            <td style="padding:6px 10px; text-align:right; color:#ccc;">@x.OpenPrice.ToString("F2")</td>
-                            <td style="padding:6px 10px; text-align:right; color:#4caf50;">@x.HighPrice.ToString("F2")</td>
-                            <td style="padding:6px 10px; text-align:right; color:#f44336;">@x.LowPrice.ToString("F2")</td>
-                            <td style="padding:6px 10px; text-align:right; font-weight:600; color:@priceColor;">@x.LastPrice.ToString("F2")</td>
-                            <td style="padding:6px 10px; text-align:right; color:#ccc;">@x.Volume.ToString("F4")</td>
-                            <td style="padding:6px 10px; text-align:right; color:#ccc;">@x.TradesCount</td>
-                            <td style="padding:6px 10px; color:#888; font-size:0.8rem;">@x.WindowStartUtc.ToString("MM/dd HH:mm:ss")</td>
-                            <td style="padding:6px 10px; color:#888; font-size:0.8rem;">@x.WindowEndUtc.ToString("MM/dd HH:mm:ss")</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    }
-</div>
+    @* Table *@
+    <MudTable T="MarketAnalyticsDto"
+              Items="_sortedItems"
+              Dense="true" Hover="true"
+              RowStyleFunc="@((_, i) => i % 2 == 0 ? "background:rgba(99,102,241,0.08)" : "background:rgba(255,255,255,0.02)")"
+              Loading="_loading" LoadingProgressColor="Color.Primary"
+              Elevation="4" Class="rounded-lg">
+        <HeaderContent>
+            <MudTh>Symbol</MudTh>
+            <MudTh Style="text-align:right">Open</MudTh>
+            <MudTh Style="text-align:right; color:#4caf50">High</MudTh>
+            <MudTh Style="text-align:right; color:#f44336">Low</MudTh>
+            <MudTh Style="text-align:right">Last</MudTh>
+            <MudTh Style="text-align:right">% Change</MudTh>
+            <MudTh Style="text-align:right; color:#ff9800">Range %</MudTh>
+            <MudTh Style="text-align:right">Volume</MudTh>
+            <MudTh Style="text-align:right">Trades</MudTh>
+            <MudTh>Window Start (UTC)</MudTh>
+            <MudTh>Window End (UTC)</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Symbol">
+                <MudText Color="Color.Primary" Typo="Typo.body2" Style="font-weight:600">
+                    @context.Symbol
+                </MudText>
+            </MudTd>
+            <MudTd DataLabel="Open" Style="text-align:right">@context.OpenPrice.ToString("F2")</MudTd>
+            <MudTd DataLabel="High" Style="text-align:right; color:#4caf50">@context.HighPrice.ToString("F2")</MudTd>
+            <MudTd DataLabel="Low"  Style="text-align:right; color:#f44336">@context.LowPrice.ToString("F2")</MudTd>
+            <MudTd DataLabel="Last" Style="@($"text-align:right; font-weight:600; color:{(context.LastPrice >= context.OpenPrice ? "#4caf50" : "#f44336")}")">
+                @context.LastPrice.ToString("F2")
+            </MudTd>
+            <MudTd DataLabel="% Change" Style="text-align:right">
+                <MudText Typo="Typo.body2" Style="@($"font-weight:700; color:{(context.ChangePercent >= 0 ? "#4caf50" : "#f44336")}")">
+                    @context.ChangePercent.ToString("+0.00;-0.00;0.00")%
+                </MudText>
+            </MudTd>
+            <MudTd DataLabel="Range %" Style="text-align:right; color:#ff9800">
+                @context.RangePercent.ToString("F2")%
+            </MudTd>
+            <MudTd DataLabel="Volume" Style="text-align:right">@context.Volume.ToString("F4")</MudTd>
+            <MudTd DataLabel="Trades" Style="text-align:right">@context.TradesCount</MudTd>
+            <MudTd DataLabel="Window Start">
+                <MudText Typo="Typo.caption" Style="color:var(--mud-palette-text-secondary)">
+                    @context.WindowStartUtc.ToString("MM/dd HH:mm:ss")
+                </MudText>
+            </MudTd>
+            <MudTd DataLabel="Window End">
+                <MudText Typo="Typo.caption" Style="color:var(--mud-palette-text-secondary)">
+                    @context.WindowEndUtc.ToString("MM/dd HH:mm:ss")
+                </MudText>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText Style="padding:24px; color:var(--mud-palette-text-secondary)">
+                No data. Make sure the pipeline is running.
+            </MudText>
+        </NoRecordsContent>
+    </MudTable>
 
-@code {
-    private bool _loading = true;
-    private bool _clearing = false;
-    private bool _autoRefresh = false;
-    private int _autoRefreshSec = 10;
-    private int _pageSize = 100;
-    private string _selectedSymbol = "";
-    private string _sortField = "windowStartUtc";
-    private DateTime? _lastUpdated;
-    private string? _error;
-    private List<TradingApp.Contracts.Events.AggregatedMarketAnalyticsEvent> _items = new();
-    private List<string> _symbols = new();
-    private CancellationTokenSource? _autoRefreshCts;
-
-    private IEnumerable<TradingApp.Contracts.Events.AggregatedMarketAnalyticsEvent> _sortedItems =>
-        _sortField switch
-        {
-            "symbol"      => _items.OrderBy(x => x.Symbol),
-            "lastPrice"   => _items.OrderByDescending(x => x.LastPrice),
-            "volume"      => _items.OrderByDescending(x => x.Volume),
-            "tradesCount" => _items.OrderByDescending(x => x.TradesCount),
-            _             => _items
-        };
-
-    protected override async Task OnInitializedAsync()
-    {
-        try
-        {
-            _symbols = (await AnalyticsService.GetSymbolsAsync()).OrderBy(s => s).ToList();
-            await Load();
-        }
-        catch (Exception ex)
-        {
-            _error = ex.Message;
-            _loading = false;
-        }
-    }
-
-    private async Task Load()
-    {
-        _loading = true;
-        _error = null;
-        try
-        {
-            var symbol = string.IsNullOrWhiteSpace(_selectedSymbol) ? null : _selectedSymbol;
-            _items = (await AnalyticsService.GetAsync(_pageSize, symbol)).ToList();
-            _lastUpdated = DateTime.UtcNow;
-        }
-        catch (Exception ex)
-        {
-            _error = ex.Message;
-        }
-        finally
-        {
-            _loading = false;
-        }
-    }
-
-    private void ApplySort() => StateHasChanged();
-
-    private async Task OnAutoRefreshChangedAsync()
-    {
-        await StopAutoRefresh();
-        if (_autoRefresh)
-            StartAutoRefresh();
-    }
-
-    private void StartAutoRefresh()
-    {
-        _autoRefreshCts = new CancellationTokenSource();
-        var token = _autoRefreshCts.Token;
-        _ = Task.Run(async () =>
-        {
-            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(_autoRefreshSec));
-            while (!token.IsCancellationRequested && await timer.WaitForNextTickAsync(token).ConfigureAwait(false))
-            {
-                await InvokeAsync(async () =>
-                {
-                    await Load();
-                    StateHasChanged();
-                });
-            }
-        }, token);
-    }
-
-    private async Task StopAutoRefresh()
-    {
-        if (_autoRefreshCts is not null)
-        {
-            await _autoRefreshCts.CancelAsync();
-            _autoRefreshCts.Dispose();
-            _autoRefreshCts = null;
-        }
-    }
-
-    private async Task Clear()
-    {
-        _clearing = true;
-        try
-        {
-            await AnalyticsService.ClearAsync();
-            _items.Clear();
-            _lastUpdated = null;
-        }
-        finally
-        {
-            _clearing = false;
-        }
-    }
-
-    public async ValueTask DisposeAsync() => await StopAutoRefresh();
-}
-
+</MudContainer>
