@@ -18,7 +18,7 @@ public sealed class TradesAggregatorService : ITradesAggregatorService
         this.logger     = logger;
     }
 
-    public async Task<AggregatedMarketAnalyticsEntity> BuildAggregatedTradesAsync(
+    public Task<AggregatedMarketAnalyticsEntity> BuildAggregatedTradesAsync(
         DateTime windowStart,
         int aggregationRangeInMinutes,
         RawMarketTradeEvent trade,
@@ -28,28 +28,25 @@ public sealed class TradesAggregatorService : ITradesAggregatorService
 
         var windowEnd = windowStart.AddMinutes(aggregationRangeInMinutes);
 
-        var existing = await this.repository.GetByWindowAsync(trade.Symbol, windowStart, cancellationToken);
-
-        AggregatedMarketAnalyticsEntity aggregate;
-
-        if (existing is null)
-        {
-            aggregate = CreateNewWindow(trade, windowStart, windowEnd);
-            this.logger.LogInformation(
-                "New window opened: {Symbol} window={WindowStart:u} open={Open}",
-                trade.Symbol, windowStart, trade.Price);
-        }
-        else
-        {
-            aggregate = UpdateWindow(existing, trade, windowEnd);
-            this.logger.LogDebug(
-                "Window updated: {Symbol} window={WindowStart:u} trades={Count} last={Last}",
-                trade.Symbol, windowStart, aggregate.TradesCount, aggregate.LastPrice);
-        }
-
-        await this.repository.SaveAsync(aggregate, cancellationToken);
-
-        return aggregate;
+        return this.repository.UpsertWindowAsync(
+            trade.Symbol,
+            windowStart,
+            windowEnd,
+            createNew: () =>
+            {
+                this.logger.LogInformation(
+                    "New window opened: {Symbol} window={WindowStart:u} open={Open}",
+                    trade.Symbol, windowStart, trade.Price);
+                return CreateNewWindow(trade, windowStart, windowEnd);
+            },
+            applyUpdate: existing =>
+            {
+                UpdateWindow(existing, trade, windowEnd);
+                this.logger.LogDebug(
+                    "Window updated: {Symbol} window={WindowStart:u} trades={Count} last={Last}",
+                    trade.Symbol, windowStart, existing.TradesCount, existing.LastPrice);
+            },
+            cancellationToken);
     }
 
     // ── private helpers ──────────────────────────────────────────────────────
@@ -72,18 +69,17 @@ public sealed class TradesAggregatorService : ITradesAggregatorService
         UpdatedAtUtc   = DateTime.UtcNow,
     };
 
-    private static AggregatedMarketAnalyticsEntity UpdateWindow(
+    private static void UpdateWindow(
         AggregatedMarketAnalyticsEntity existing,
         RawMarketTradeEvent trade,
         DateTime windowEnd)
     {
-        existing.HighPrice     = Math.Max(existing.HighPrice, trade.Price);
-        existing.LowPrice      = Math.Min(existing.LowPrice, trade.Price);
-        existing.LastPrice     = trade.Price;
-        existing.Volume       += trade.Quantity;
-        existing.TradesCount  += 1;
-        existing.WindowEndUtc  = windowEnd;
-        existing.UpdatedAtUtc  = DateTime.UtcNow;
-        return existing;
+        existing.HighPrice    = Math.Max(existing.HighPrice, trade.Price);
+        existing.LowPrice     = Math.Min(existing.LowPrice, trade.Price);
+        existing.LastPrice    = trade.Price;
+        existing.Volume      += trade.Quantity;
+        existing.TradesCount += 1;
+        existing.WindowEndUtc = windowEnd;
+        existing.UpdatedAtUtc = DateTime.UtcNow;
     }
 }

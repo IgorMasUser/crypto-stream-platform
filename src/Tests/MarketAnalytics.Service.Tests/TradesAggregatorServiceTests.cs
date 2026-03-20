@@ -35,7 +35,7 @@ public sealed class TradesAggregatorServiceTests
     public async Task BuildAggregatedTradesAsync_NoExistingWindow_SetsOhlcvFromFirstTrade()
     {
         var trade = MakeTrade(price: 100m, qty: 5m);
-        _repository.GetByWindowAsync(trade.Symbol, WindowStart).Returns((AggregatedMarketAnalyticsEntity?)null);
+        SetupUpsertAsNewWindow();
 
         var result = await _sut.BuildAggregatedTradesAsync(WindowStart, 1, trade);
 
@@ -51,14 +51,19 @@ public sealed class TradesAggregatorServiceTests
     }
 
     [Fact]
-    public async Task BuildAggregatedTradesAsync_NoExistingWindow_CallsSaveAsync()
+    public async Task BuildAggregatedTradesAsync_NoExistingWindow_CallsUpsertWindowAsync()
     {
         var trade = MakeTrade(price: 100m, qty: 1m);
-        _repository.GetByWindowAsync(trade.Symbol, WindowStart).Returns((AggregatedMarketAnalyticsEntity?)null);
+        SetupUpsertAsNewWindow();
 
         await _sut.BuildAggregatedTradesAsync(WindowStart, 1, trade);
 
-        await _repository.Received(1).SaveAsync(Arg.Any<AggregatedMarketAnalyticsEntity>());
+        await _repository.Received(1).UpsertWindowAsync(
+            trade.Symbol,
+            WindowStart,
+            WindowStart.AddMinutes(1),
+            Arg.Any<Func<AggregatedMarketAnalyticsEntity>>(),
+            Arg.Any<Action<AggregatedMarketAnalyticsEntity>>());
     }
 
     // ── existing window (subsequent trades) ───────────────────────────────────
@@ -68,7 +73,7 @@ public sealed class TradesAggregatorServiceTests
     {
         var existing = MakeEntity(open: 100m, high: 105m, low: 98m, last: 102m, volume: 10m, trades: 3);
         var trade = MakeTrade(price: 103m, qty: 2m);
-        _repository.GetByWindowAsync(trade.Symbol, WindowStart).Returns(existing);
+        SetupUpsertAsExistingWindow(existing);
 
         var result = await _sut.BuildAggregatedTradesAsync(WindowStart, 1, trade);
 
@@ -82,7 +87,7 @@ public sealed class TradesAggregatorServiceTests
     {
         var existing = MakeEntity(open: 100m, high: 105m, low: 98m, last: 100m, volume: 1m, trades: 1);
         var trade = MakeTrade(price: 110m, qty: 1m);
-        _repository.GetByWindowAsync(trade.Symbol, WindowStart).Returns(existing);
+        SetupUpsertAsExistingWindow(existing);
 
         var result = await _sut.BuildAggregatedTradesAsync(WindowStart, 1, trade);
 
@@ -95,7 +100,7 @@ public sealed class TradesAggregatorServiceTests
     {
         var existing = MakeEntity(open: 100m, high: 105m, low: 98m, last: 100m, volume: 1m, trades: 1);
         var trade = MakeTrade(price: 90m, qty: 1m);
-        _repository.GetByWindowAsync(trade.Symbol, WindowStart).Returns(existing);
+        SetupUpsertAsExistingWindow(existing);
 
         var result = await _sut.BuildAggregatedTradesAsync(WindowStart, 1, trade);
 
@@ -108,7 +113,7 @@ public sealed class TradesAggregatorServiceTests
     {
         var existing = MakeEntity(open: 100m, high: 105m, low: 98m, last: 100m, volume: 1m, trades: 1);
         var trade = MakeTrade(price: 200m, qty: 1m);
-        _repository.GetByWindowAsync(trade.Symbol, WindowStart).Returns(existing);
+        SetupUpsertAsExistingWindow(existing);
 
         var result = await _sut.BuildAggregatedTradesAsync(WindowStart, 1, trade);
 
@@ -121,14 +126,47 @@ public sealed class TradesAggregatorServiceTests
     public async Task BuildAggregatedTradesAsync_AggregationRange_CorrectWindowEnd()
     {
         var trade = MakeTrade(price: 100m, qty: 1m);
-        _repository.GetByWindowAsync(trade.Symbol, WindowStart).Returns((AggregatedMarketAnalyticsEntity?)null);
+        SetupUpsertAsNewWindow();
 
         var result = await _sut.BuildAggregatedTradesAsync(WindowStart, aggregationRangeInMinutes: 5, trade);
 
         Assert.Equal(WindowStart.AddMinutes(5), result.WindowEndUtc);
     }
 
-    // ── helpers ────────────────────────────────────────────────────────────────
+    // ── mock helpers ───────────────────────────────────────────────────────────
+
+    /// <summary>Simulates a new window — invokes the <c>createNew</c> callback.</summary>
+    private void SetupUpsertAsNewWindow()
+    {
+        _repository
+            .UpsertWindowAsync(
+                Arg.Any<string>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(),
+                Arg.Any<Func<AggregatedMarketAnalyticsEntity>>(),
+                Arg.Any<Action<AggregatedMarketAnalyticsEntity>>())
+            .Returns(callInfo =>
+            {
+                var createNew = callInfo.ArgAt<Func<AggregatedMarketAnalyticsEntity>>(3);
+                return Task.FromResult(createNew());
+            });
+    }
+
+    /// <summary>Simulates an existing window — invokes the <c>applyUpdate</c> callback on <paramref name="existing"/>.</summary>
+    private void SetupUpsertAsExistingWindow(AggregatedMarketAnalyticsEntity existing)
+    {
+        _repository
+            .UpsertWindowAsync(
+                Arg.Any<string>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(),
+                Arg.Any<Func<AggregatedMarketAnalyticsEntity>>(),
+                Arg.Any<Action<AggregatedMarketAnalyticsEntity>>())
+            .Returns(callInfo =>
+            {
+                var applyUpdate = callInfo.ArgAt<Action<AggregatedMarketAnalyticsEntity>>(4);
+                applyUpdate(existing);
+                return Task.FromResult(existing);
+            });
+    }
+
+    // ── data builders ──────────────────────────────────────────────────────────
 
     private static RawMarketTradeEvent MakeTrade(decimal price, decimal qty) =>
         new("evt-1", "binance", "BTCUSDT", "btcusdt@trade",

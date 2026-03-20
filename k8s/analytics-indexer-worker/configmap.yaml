@@ -14,4 +14,5 @@ data:
   INDEXER__GROUPID: "analytics-indexer-worker"
   INDEXER__INDEXPREFIX: "analytics-index"
   ELASTIC__URI: "http://elastic:9200"
+  LOGGING__ELASTICSEARCH__URL: "http://elastic:9200"
 

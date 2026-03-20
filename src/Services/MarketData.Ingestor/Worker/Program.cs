@@ -33,5 +33,5 @@ builder.Services.AddHostedService<MarketDataIngestionWorker>();
 builder.Services.AddHostedService<TestAggregatedPublisherHostedService>();
 
 var app = builder.Build();
-await app.RunAsync();
 
+await app.RunAsync();

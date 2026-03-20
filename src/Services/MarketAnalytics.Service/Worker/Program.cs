@@ -19,7 +19,6 @@ var esUrl = builder.Configuration["Logging:Elasticsearch:Url"] ?? "http://elasti
 builder.Services.AddSerilog((_, loggerConfig) =>
     loggerConfig
         .MinimumLevel.Information()
-        // suppress noisy EF Core SQL + host lifecycle messages in Kibana
         .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Warning)
         .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Warning)
         .Enrich.FromLogContext()
@@ -28,10 +27,10 @@ builder.Services.AddSerilog((_, loggerConfig) =>
             outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext}: {Message:lj}{NewLine}{Exception}")
         .WriteTo.Elasticsearch(new ElasticsearchSinkOptions(new Uri(esUrl))
         {
-            AutoRegisterTemplate  = true,
-            IndexFormat           = "tradingapp-logs-{0:yyyy.MM}",
-            TypeName              = null,
-            FailureCallback       = (e, ex) => Console.Error.WriteLine($"[Serilog ES] Failed: {ex?.Message}")
+            AutoRegisterTemplate = true,
+            IndexFormat          = "tradingapp-logs-{0:yyyy.MM}",
+            TypeName             = null,
+            FailureCallback      = (e, ex) => Console.Error.WriteLine($"[Serilog ES] Failed: {ex?.Message}")
         })
 );
 

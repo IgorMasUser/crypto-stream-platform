@@ -1,4 +1,5 @@
 using Elastic.Clients.Elasticsearch;
+using Microsoft.Extensions.Logging;
 using TradingApp.Contracts.Events;
 using TradingApp.Dashboard.Web.Models;
 
@@ -8,11 +9,13 @@ public sealed class AnalyticsService
 {
     private readonly ElasticsearchClient _client;
     private readonly IConfiguration _config;
+    private readonly ILogger<AnalyticsService> _logger;
 
-    public AnalyticsService(ElasticsearchClient client, IConfiguration config)
+    public AnalyticsService(ElasticsearchClient client, IConfiguration config, ILogger<AnalyticsService> logger)
     {
         _client = client;
         _config = config;
+        _logger = logger;
     }
 
     public async Task<IReadOnlyCollection<MarketAnalyticsDto>> GetAsync(
@@ -28,10 +31,16 @@ public sealed class AnalyticsService
             s.Sort(sort => sort.Field(f => f.WindowStartUtc, o => o.Order(SortOrder.Desc)));
 
             if (!string.IsNullOrWhiteSpace(symbol))
-            {
                 s.Query(q => q.Term(t => t.Field("symbol.keyword").Value(symbol)));
-            }
         }, ct);
+
+        if (!resp.IsValidResponse)
+        {
+            _logger.LogError(
+                "Elasticsearch query failed for index {Index}: {DebugInfo}",
+                index, resp.DebugInformation);
+            return Array.Empty<MarketAnalyticsDto>();
+        }
 
         return resp.Documents.Select(Map).ToList();
     }
@@ -48,15 +57,15 @@ public sealed class AnalyticsService
 
     private static MarketAnalyticsDto Map(AggregatedMarketAnalyticsEvent e) => new()
     {
-        Symbol        = e.Symbol,
+        Symbol         = e.Symbol,
         WindowStartUtc = e.WindowStartUtc,
-        WindowEndUtc  = e.WindowEndUtc,
-        OpenPrice     = e.OpenPrice,
-        HighPrice     = e.HighPrice,
-        LowPrice      = e.LowPrice,
-        LastPrice     = e.LastPrice,
-        Volume        = e.Volume,
-        TradesCount   = e.TradesCount,
-        CreatedAtUtc  = e.CreatedAtUtc,
+        WindowEndUtc   = e.WindowEndUtc,
+        OpenPrice      = e.OpenPrice,
+        HighPrice      = e.HighPrice,
+        LowPrice       = e.LowPrice,
+        LastPrice      = e.LastPrice,
+        Volume         = e.Volume,
+        TradesCount    = e.TradesCount,
+        CreatedAtUtc   = e.CreatedAtUtc,
     };
 }
