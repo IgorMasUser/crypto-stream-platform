@@ -26,7 +26,7 @@ public sealed class BinanceTradeStream : IBinanceTradeStream, IAsyncDisposable
 
     public async IAsyncEnumerable<BinanceCombinedTradeMessage> SubscribeAsync([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        if (_options.Symbols.ToList().Count == 0)
+        if (!_options.Symbols.Any())
         {
             throw new InvalidOperationException("At least one Binance symbol must be configured.");
         }

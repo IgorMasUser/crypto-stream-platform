@@ -47,12 +47,34 @@ public sealed class AnalyticsService
 
     public async Task<IReadOnlyCollection<string>> GetSymbolsAsync(CancellationToken ct = default)
     {
-        var resp = await GetAsync(size: 500, symbol: null, ct);
-        return resp.Select(x => x.Symbol)
-                   .Where(s => !string.IsNullOrWhiteSpace(s))
-                   .Distinct()
-                   .OrderBy(s => s)
-                   .ToList();
+        var index = _config.GetValue<string>("Elastic:IndexPrefix") ?? "analytics-index";
+        const string aggName = "unique_symbols";
+
+        var resp = await _client.SearchAsync<AggregatedMarketAnalyticsEvent>(s => s
+            .Index(index)
+            .Size(0) // no documents — only the aggregation bucket counts
+            .Aggregations(a => a
+                .Terms(aggName, t => t
+                    .Field("symbol.keyword")
+                    .Size(200))), ct);
+
+        if (!resp.IsValidResponse)
+        {
+            _logger.LogError(
+                "Elasticsearch symbols aggregation failed for index {Index}: {DebugInfo}",
+                index, resp.DebugInformation);
+            return Array.Empty<string>();
+        }
+
+        var buckets = resp.Aggregations?.GetStringTerms(aggName)?.Buckets;
+        if (buckets is null)
+            return Array.Empty<string>();
+
+        return buckets
+            .Select(b => (string?)b.Key.Value)
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .OrderBy(s => s)
+            .ToList()!;
     }
 
     private static MarketAnalyticsDto Map(AggregatedMarketAnalyticsEvent e) => new()
