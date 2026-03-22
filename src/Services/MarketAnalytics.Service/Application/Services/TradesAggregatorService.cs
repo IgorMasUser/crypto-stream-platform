@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging;
 using TradingApp.Contracts.Events;
 using TradingApp.MarketAnalytics.Service.Application.Abstractions;
 using TradingApp.MarketAnalytics.Service.Domain;
