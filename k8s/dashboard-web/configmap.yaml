@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dashboard-web-config
+data:
+  CONNECTIONSTRINGS__POSTGRES: "Host=postgres;Port=5432;Database=dashboard;Username=postgres;Password=postgres"
+  ELASTIC__URI: "http://elastic:9200"
+  ELASTIC__INDEXPREFIX: "analytics-index"
+  AUTH__ADMIN__EMAIL: "admin@tradingapp.local"
+  AUTH__ADMIN__PASSWORD: "Admin123!"
+  AUTH__ADMIN__DISPLAYNAME: "Administrator"
