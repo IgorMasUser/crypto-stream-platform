@@ -6,17 +6,14 @@ using TradingApp.MarketAnalytics.Service.Domain;
 
 namespace TradingApp.MarketAnalytics.Service.Application.Services;
 
-/// <summary>
-/// Minimal test aggregator: converts each raw trade into a single AggregatedMarketAnalyticsEvent
-/// so we can see data flowing end-to-end. Not a real aggregation.
-/// </summary>
 public sealed class AggregatingRawTradeEventHandler : IRawTradeEventHandler
 {
     private readonly IKafkaProducer<string, AggregatedMarketAnalyticsEvent> producer;
     private readonly ITradesAggregatorService tradesAggregatorService;
     private readonly ILogger<AggregatingRawTradeEventHandler> logger;
     private const string AggregatedTopic = "aggregated-market-analytics";
-    private const int aggragationRangeinMinutes = 1;
+    private const int AggregationRangeInMinutes = 1;
+    private const int MaxProduceRetries = 3;
 
     public AggregatingRawTradeEventHandler(
         IKafkaProducer<string, AggregatedMarketAnalyticsEvent> producer,
@@ -40,20 +37,58 @@ public sealed class AggregatingRawTradeEventHandler : IRawTradeEventHandler
             0,
             DateTimeKind.Utc);
 
-        var aggregate = await this.tradesAggregatorService.BuildAggregatedTradesAsync(windowStart, aggragationRangeinMinutes, trade, cancellationToken);
+        var aggregate = await this.tradesAggregatorService
+            .BuildAggregatedTradesAsync(windowStart, AggregationRangeInMinutes, trade, cancellationToken);
 
-        var key = $"{trade.Symbol}|{windowStart:O}";
-
+        var key            = $"{trade.Symbol}|{windowStart:O}";
         var aggregatedEvent = this.ToEvent(aggregate);
 
-        await this.producer.ProduceAsync(AggregatedTopic, key, aggregatedEvent, cancellationToken)
-            .ConfigureAwait(false);
+        await this.ProduceWithRetryAsync(key, aggregatedEvent, trade.TradeId.ToString(), cancellationToken);
+    }
 
-        this.logger.LogDebug(
-            "Published aggregate for {Symbol} trade {TradeId} key={Key}",
-            aggregatedEvent.Symbol,
-            trade.TradeId,
-            key);
+    private async Task ProduceWithRetryAsync(
+        string key,
+        AggregatedMarketAnalyticsEvent aggregatedEvent,
+        string tradeId,
+        CancellationToken cancellationToken)
+    {
+        var attempt = 0;
+        while (true)
+        {
+            try
+            {
+                await this.producer
+                    .ProduceAsync(AggregatedTopic, key, aggregatedEvent, cancellationToken)
+                    .ConfigureAwait(false);
+
+                this.logger.LogDebug(
+                    "Published aggregate for {Symbol} trade {TradeId} key={Key}",
+                    aggregatedEvent.Symbol, tradeId, key);
+                return;
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex) when (attempt < MaxProduceRetries)
+            {
+                attempt++;
+                var delay = TimeSpan.FromMilliseconds(200 * (1 << attempt)); // 400 → 800 → 1600 ms
+                this.logger.LogWarning(
+                    ex,
+                    "ProduceAsync failed (attempt {Attempt}/{MaxRetries}), retrying in {DelayMs}ms for key {Key}",
+                    attempt, MaxProduceRetries, delay.TotalMilliseconds, key);
+                await Task.Delay(delay, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                this.logger.LogError(
+                    ex,
+                    "ProduceAsync failed after {MaxRetries} retries for key {Key} — trade dropped",
+                    MaxProduceRetries, key);
+                throw;
+            }
+        }
     }
 
     private AggregatedMarketAnalyticsEvent ToEvent(AggregatedMarketAnalyticsEntity aggregate)
@@ -71,4 +106,3 @@ public sealed class AggregatingRawTradeEventHandler : IRawTradeEventHandler
             aggregate.CreatedAtUtc);
     }
 }
-

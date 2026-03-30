@@ -26,10 +26,13 @@ public sealed class IndexerHostedService : BackgroundService
 
         var consumerConfig = new ConsumerConfig
         {
-            BootstrapServers = _options.BootstrapServers,
-            GroupId = _options.GroupId,
-            AutoOffsetReset = AutoOffsetReset.Earliest,
-            EnableAutoCommit = true
+            BootstrapServers      = _options.BootstrapServers,
+            GroupId               = _options.GroupId,
+            AutoOffsetReset       = AutoOffsetReset.Earliest,
+            EnableAutoCommit      = true,
+            // Offsets are stored manually after successful indexing so a crash
+            // mid-handler does not silently advance the committed offset.
+            EnableAutoOffsetStore = false
         };
         _consumer = new ConsumerBuilder<string, string>(consumerConfig).Build();
     }
@@ -57,17 +60,38 @@ public sealed class IndexerHostedService : BackgroundService
                     continue;
                 }
 
-                var indexName = $"{_options.IndexPrefix}";
-                var response = await _elastic.IndexAsync(evt, idx => idx.Index(indexName), stoppingToken);
-                var eventKey = $"{evt.Symbol}|{evt.WindowStartUtc:O}";
-                if (!response.IsValidResponse)
+                var indexName = _options.IndexPrefix;
+                var eventKey  = $"{evt.Symbol}|{evt.WindowStartUtc:O}";
+
+                const int MaxIndexRetries = 3;
+                for (var attempt = 0; attempt <= MaxIndexRetries; attempt++)
                 {
-                    _logger.LogWarning("Failed to index event {EventKey}: {Reason}", eventKey, response.DebugInformation);
+                    var response = await _elastic.IndexAsync(evt, idx => idx.Index(indexName), stoppingToken);
+                    if (response.IsValidResponse)
+                    {
+                        _logger.LogInformation("Indexed event {EventKey} into {Index}", eventKey, indexName);
+                        break;
+                    }
+
+                    if (attempt == MaxIndexRetries)
+                    {
+                        _logger.LogError(
+                            "Failed to index event {EventKey} after {MaxRetries} attempts: {Reason}",
+                            eventKey, MaxIndexRetries, response.DebugInformation);
+                        break;
+                    }
+
+                    var delay = TimeSpan.FromMilliseconds(200 * (1 << (attempt + 1)));
+                    _logger.LogWarning(
+                        "Failed to index event {EventKey} (attempt {Attempt}/{MaxRetries}): {Reason}. Retrying in {DelayMs}ms",
+                        eventKey, attempt + 1, MaxIndexRetries, response.DebugInformation, delay.TotalMilliseconds);
+                    await Task.Delay(delay, stoppingToken);
                 }
-                else
-                {
-                    _logger.LogInformation("Indexed event {EventKey} into {Index}", eventKey, indexName);
-                }
+
+                // Advance the committed offset after processing.
+                // On persistent ES failure we still store the offset to avoid the
+                // consumer getting stuck on an unindexable message forever.
+                _consumer.StoreOffset(result!);
             }
             catch (OperationCanceledException)
             {

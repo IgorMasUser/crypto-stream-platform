@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using TradingApp.MarketAnalytics.Service.Application.Abstractions;
 using TradingApp.MarketAnalytics.Service.Domain;
 
@@ -13,30 +14,46 @@ public sealed class MarketAnalyticsRepository : IMarketAnalyticsRepository
         this.dbFactory = dbFactory;
     }
 
-    public async Task<AggregatedMarketAnalyticsEntity?> GetByWindowAsync(
+    public async Task<AggregatedMarketAnalyticsEntity> UpsertWindowAsync(
         string symbol,
-        DateTime windowStartUtc,
-        CancellationToken cancellationToken = default)
-    {
-        await using var context = await this.dbFactory.CreateDbContextAsync(cancellationToken);
-        return await context.Aggregates
-            .FindAsync([symbol, windowStartUtc], cancellationToken);
-    }
-
-    public async Task SaveAsync(
-        AggregatedMarketAnalyticsEntity entity,
+        DateTime windowStart,
+        DateTime windowEnd,
+        Func<AggregatedMarketAnalyticsEntity> createNew,
+        Action<AggregatedMarketAnalyticsEntity> applyUpdate,
         CancellationToken cancellationToken = default)
     {
         await using var context = await this.dbFactory.CreateDbContextAsync(cancellationToken);
 
-        var exists = await context.Aggregates
-            .FindAsync([entity.Symbol, entity.WindowStartUtc], cancellationToken);
+        var existing = await context.Aggregates
+            .FindAsync([symbol, windowStart], cancellationToken);
 
-        if (exists is null)
-            context.Aggregates.Add(entity);
-        else
-            context.Entry(exists).CurrentValues.SetValues(entity);
+        if (existing is null)
+        {
+            var newEntity = createNew();
+            context.Aggregates.Add(newEntity);
 
+            try
+            {
+                await context.SaveChangesAsync(cancellationToken);
+                return newEntity;
+            }
+            catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+            {
+                // A concurrent replica inserted the same window between our FindAsync and
+                // SaveChangesAsync. Reload the now-existing row and apply the update instead.
+                context.ChangeTracker.Clear();
+                existing = await context.Aggregates
+                    .FindAsync([symbol, windowStart], cancellationToken)
+                    ?? throw new InvalidOperationException(
+                        $"Row for {symbol}|{windowStart:O} disappeared after unique constraint violation.");
+            }
+        }
+
+        applyUpdate(existing);
         await context.SaveChangesAsync(cancellationToken);
+        return existing;
     }
+
+    private static bool IsUniqueConstraintViolation(DbUpdateException ex) =>
+        ex.InnerException is PostgresException pg && pg.SqlState == "23505";
 }

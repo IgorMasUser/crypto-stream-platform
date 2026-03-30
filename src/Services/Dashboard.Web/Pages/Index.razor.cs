@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging;
 using TradingApp.Dashboard.Web.Models;
 using TradingApp.Dashboard.Web.Services;
 
@@ -18,6 +19,7 @@ public enum SortField
 public partial class Index : IAsyncDisposable
 {
     [Inject] private AnalyticsService AnalyticsService { get; set; } = default!;
+    [Inject] private ILogger<Index> Logger { get; set; } = default!;
 
     private bool _loading = true;
     private bool _autoRefresh = false;
@@ -76,7 +78,8 @@ public partial class Index : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            _error = ex.Message;
+            Logger.LogError(ex, "Failed to initialise dashboard data");
+            _error = "Failed to load data. Please try refreshing the page.";
             _loading = false;
         }
     }
@@ -93,7 +96,8 @@ public partial class Index : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            _error = ex.Message;
+            Logger.LogError(ex, "Failed to load analytics data");
+            _error = "Failed to load data. Please try refreshing the page.";
         }
         finally
         {

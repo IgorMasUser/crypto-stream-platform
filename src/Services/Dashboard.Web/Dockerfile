@@ -11,7 +11,7 @@ COPY ["src/Services/MarketAnalytics.Service/MarketAnalytics.Service.csproj", "sr
 COPY ["src/Services/AnalyticsIndexer.Worker/AnalyticsIndexer.Worker.csproj", "src/Services/AnalyticsIndexer.Worker/"]
 COPY ["src/Services/Dashboard.Web/Dashboard.Web.csproj", "src/Services/Dashboard.Web/"]
 
-RUN dotnet restore "TradingApp.sln"
+RUN dotnet restore "src/Services/Dashboard.Web/Dashboard.Web.csproj"
 
 COPY . .
 RUN dotnet publish "src/Services/Dashboard.Web/Dashboard.Web.csproj" -c Release -o /app/publish /p:UseAppHost=false

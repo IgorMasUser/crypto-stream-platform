@@ -44,6 +44,11 @@ spec:
                 configMapKeyRef:
                   name: analytics-indexer-worker-config
                   key: ELASTIC__URI
+            - name: Logging__Elasticsearch__Url
+              valueFrom:
+                configMapKeyRef:
+                  name: analytics-indexer-worker-config
+                  key: LOGGING__ELASTICSEARCH__URL
           resources:
             requests:
               cpu: 100m

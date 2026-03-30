@@ -47,11 +47,12 @@ public sealed class KafkaRawTradeEventConsumer : IRawTradeEventConsumer
 
         var config = new ConsumerConfig
         {
-            BootstrapServers    = bootstrapServers,
-            GroupId             = this.consumerOptions.GroupId,
-            EnableAutoCommit    = this.consumerOptions.EnableAutoCommit,
-            AutoOffsetReset     = this.consumerOptions.AutoOffsetReset,
-            ClientId            = $"{this.producerOptions.ClientId ?? Environment.MachineName}-consumer",
+            BootstrapServers      = bootstrapServers,
+            GroupId               = this.consumerOptions.GroupId,
+            EnableAutoCommit      = this.consumerOptions.EnableAutoCommit,
+            EnableAutoOffsetStore = this.consumerOptions.EnableAutoOffsetStore,
+            AutoOffsetReset       = this.consumerOptions.AutoOffsetReset,
+            ClientId              = $"{this.producerOptions.ClientId ?? Environment.MachineName}-consumer",
             AllowAutoCreateTopics = false
         };
 
@@ -87,6 +88,12 @@ public sealed class KafkaRawTradeEventConsumer : IRawTradeEventConsumer
                     if (result?.Message?.Value is null) continue;
 
                     await handler(result.Message.Value, cancellationToken).ConfigureAwait(false);
+
+                    // Store offset only after the handler completes successfully.
+                    // With EnableAutoOffsetStore=false, this prevents the broker from
+                    // advancing the committed offset before processing is confirmed.
+                    if (!this.consumerOptions.EnableAutoOffsetStore)
+                        consumer.StoreOffset(result);
                 }
                 catch (ConsumeException ex)
                 {
