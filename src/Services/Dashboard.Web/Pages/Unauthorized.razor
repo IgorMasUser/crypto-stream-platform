@@ -1,0 +1,10 @@
+@page "/unauthorized"
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="pa-8 d-flex flex-column align-center">
+    <MudIcon Icon="@Icons.Material.Filled.Lock" Color="Color.Error" Style="font-size:4rem; margin-bottom:16px" />
+    <MudText Typo="Typo.h5" Align="Align.Center" Class="mb-2">Access Denied</MudText>
+    <MudText Typo="Typo.body2" Align="Align.Center" Style="color:var(--mud-palette-text-secondary)" Class="mb-6">
+        You don't have permission to view this page.
+    </MudText>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/">Go to Dashboard</MudButton>
+</MudContainer>

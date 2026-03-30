@@ -1,7 +1,27 @@
 @inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Authorization
 
 <MudLayout>
-    <MudMainContent>
+    <MudAppBar Elevation="1" Dense="true" Color="Color.Dark">
+        <MudText Typo="Typo.subtitle1" Style="font-weight:700; color:#7c83fd; letter-spacing:-0.3px">
+            📈 TradingApp
+        </MudText>
+        <MudSpacer />
+        <AuthorizeView>
+            <Authorized>
+                <MudText Typo="Typo.caption" Style="color:#aaa; margin-right:12px">
+                    @context.User.Identity?.Name
+                </MudText>
+                <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Default"
+                           StartIcon="@Icons.Material.Filled.Logout"
+                           Href="/logout">
+                    Sign out
+                </MudButton>
+            </Authorized>
+        </AuthorizeView>
+    </MudAppBar>
+
+    <MudMainContent Style="padding-top:56px">
         @Body
     </MudMainContent>
 </MudLayout>
