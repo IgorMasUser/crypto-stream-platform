@@ -1,0 +1,68 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kafka-create-topics
+spec:
+  # Retry up to 5 times if Kafka is not ready yet
+  backoffLimit: 5
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: kafka-topics
+          # Same image as the Kafka broker to avoid pulling extra images
+          image: confluentinc/cp-kafka:7.3.2
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Waiting for Kafka to be ready..."
+              until kafka-topics --bootstrap-server kafka:9092 --list > /dev/null 2>&1; do
+                echo "  Kafka not ready yet, retrying in 5s..."
+                sleep 5
+              done
+              echo "Kafka is ready. Creating topics..."
+
+              # Primary topic: 3 partitions to allow 3 parallel consumers
+              # (matches the intended replica count of marketanalytics-service)
+              kafka-topics --bootstrap-server kafka:9092 \
+                --create --if-not-exists \
+                --topic raw-market-trades \
+                --partitions 3 \
+                --replication-factor 1
+              echo "  raw-market-trades created (3 partitions)"
+
+              # Aggregated events: 3 partitions to allow 3 parallel indexers
+              kafka-topics --bootstrap-server kafka:9092 \
+                --create --if-not-exists \
+                --topic aggregated-market-analytics \
+                --partitions 3 \
+                --replication-factor 1
+              echo "  aggregated-market-analytics created (3 partitions)"
+
+              # Retry / DLQ topics: 1 partition is sufficient
+              # (low volume, processed sequentially by a single retry consumer)
+              kafka-topics --bootstrap-server kafka:9092 \
+                --create --if-not-exists \
+                --topic raw-market-trades-retry \
+                --partitions 1 \
+                --replication-factor 1
+              echo "  raw-market-trades-retry created (1 partition)"
+
+              kafka-topics --bootstrap-server kafka:9092 \
+                --create --if-not-exists \
+                --topic raw-market-trades-dlq \
+                --partitions 1 \
+                --replication-factor 1
+              echo "  raw-market-trades-dlq created (1 partition)"
+
+              echo "All topics created successfully."
+              kafka-topics --bootstrap-server kafka:9092 --list
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi

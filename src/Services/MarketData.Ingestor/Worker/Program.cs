@@ -5,6 +5,7 @@ using TradingApp.MarketData.Ingestor.Application.Abstractions;
 using TradingApp.MarketData.Ingestor.Application.Configuration;
 using TradingApp.MarketData.Ingestor.Application.Services;
 using TradingApp.MarketData.Ingestor.Infrastructure.Binance;
+using TradingApp.MarketData.Ingestor.Infrastructure.Partitioning;
 using TradingApp.MarketData.Ingestor.Worker.HostedServices;
 using TradingApp.MarketData.Ingestor.Worker.Testing;
 
@@ -14,6 +15,22 @@ builder.Services.Configure<KafkaProducerOptions>(builder.Configuration.GetSectio
 builder.Services.Configure<BinanceStreamOptions>(builder.Configuration.GetSection("Binance"));
 builder.Services.Configure<MarketDataIngestorOptions>(builder.Configuration.GetSection("Ingestor"));
 builder.Services.Configure<KafkaResilienceOptions>(builder.Configuration.GetSection("Kafka:Resilience"));
+
+// Apply symbol partitioning based on StatefulSet pod identity.
+builder.Services.Configure<BinanceStreamOptions>(options =>
+{
+    using var loggerFactory = LoggerFactory.Create(b => b.AddConsole());
+    var logger = loggerFactory.CreateLogger("SymbolPartitioner");
+
+    var (podIndex, totalPods) = SymbolPartitioner.ResolvePodIdentity(logger);
+    var assigned = SymbolPartitioner.Partition(options.Symbols, podIndex, totalPods);
+
+    logger.LogInformation(
+        "Symbol partition: pod {PodIndex}/{TotalPods} → [{Symbols}]",
+        podIndex, totalPods, string.Join(", ", assigned));
+
+    options.Symbols = assigned;
+});
 
 var kafkaOptions = builder.Configuration.GetSection("Kafka").Get<KafkaProducerOptions>() ?? new KafkaProducerOptions();
 
@@ -27,6 +44,7 @@ else
     builder.Services.AddNullKafkaProducer<string, RawMarketTradeEvent>();
     builder.Services.AddNullKafkaProducer<string, AggregatedMarketAnalyticsEvent>();
 }
+
 builder.Services.AddSingleton<IBinanceTradeStream, BinanceTradeStream>();
 builder.Services.AddSingleton<ITradeIngestionPipeline, TradeIngestionPipeline>();
 builder.Services.AddHostedService<MarketDataIngestionWorker>();

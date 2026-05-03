@@ -1,15 +1,15 @@
+# Headless service required by StatefulSet for pod DNS (ingestor-0.ingestor-headless, etc.)
 apiVersion: v1
 kind: Service
 metadata:
-  name: marketdata-ingestor
+  name: ingestor-headless
   labels:
     app: marketdata-ingestor
 spec:
-  type: ClusterIP
+  clusterIP: None   # headless — no load balancing, just DNS per pod
   selector:
     app: marketdata-ingestor
   ports:
     - name: metrics
       port: 8080
       targetPort: 8080
-

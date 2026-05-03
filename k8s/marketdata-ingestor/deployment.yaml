@@ -1,11 +1,16 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
-  name: marketdata-ingestor
+  name: ingestor
   labels:
     app: marketdata-ingestor
 spec:
+  # Default: 1 pod (no symbol duplication).
+  # Scale up to process more symbols in parallel — each pod
+  # automatically receives its own subset via SymbolPartitioner.
+  # Keep replicas <= number of symbols (15 max for current config).
   replicas: 1
+  serviceName: ingestor-headless   # must match the headless Service below
   selector:
     matchLabels:
       app: marketdata-ingestor
@@ -18,27 +23,20 @@ spec:
         - name: marketdata-ingestor
           image: trading/marketdata-ingestor:dev
           imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: marketdata-ingestor-config
           env:
-            - name: KAFKA__ENABLED
+            # Downward API: injects the pod's own name (e.g. "ingestor-0").
+            # SymbolPartitioner extracts the ordinal index from this value.
+            - name: POD_NAME
               valueFrom:
-                configMapKeyRef:
-                  name: marketdata-ingestor-config
-                  key: KAFKA__ENABLED
-            - name: KAFKA__PUBLISHSAMPLEONSTARTUP
-              valueFrom:
-                configMapKeyRef:
-                  name: marketdata-ingestor-config
-                  key: KAFKA__PUBLISHSAMPLEONSTARTUP
-            - name: KAFKA__BOOTSTRAPSERVERS
-              valueFrom:
-                configMapKeyRef:
-                  name: marketdata-ingestor-config
-                  key: KAFKA__BOOTSTRAPSERVERS
-            - name: BINANCE__SYMBOLS
-              valueFrom:
-                configMapKeyRef:
-                  name: marketdata-ingestor-config
-                  key: BINANCE__SYMBOLS
+                fieldRef:
+                  fieldPath: metadata.name
+            # Must match spec.replicas above so each pod knows the total.
+            # Update this value whenever you change replicas.
+            - name: TOTAL_PODS
+              value: "1"
           resources:
             requests:
               cpu: 100m
@@ -46,4 +44,3 @@ spec:
             limits:
               cpu: 200m
               memory: 256Mi
-

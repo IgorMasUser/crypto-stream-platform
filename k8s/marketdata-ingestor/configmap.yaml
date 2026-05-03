@@ -6,5 +6,24 @@ data:
   KAFKA__ENABLED: "true"
   KAFKA__BOOTSTRAPSERVERS: "kafka:9092"
   KAFKA__PUBLISHSAMPLEONSTARTUP: "false"
-  BINANCE__SYMBOLS: "btcusdt,ethusdt,solusdt,bnbusdt,xrpusdt,adausdt,dogeusdt,maticusdt,dotusdt,shibusdt,ltcusdt,avaxusdt,linkusdt,atomusdt,trxusdt"
 
+  # Symbols are declared as indexed keys so ASP.NET Core binds them
+  # correctly to string[] (BinanceStreamOptions.Symbols).
+  # Add or remove entries here to change the symbol universe.
+  # SymbolPartitioner in the app will automatically split them
+  # across pods based on POD_NAME and TOTAL_PODS.
+  BINANCE__SYMBOLS__0:  "btcusdt"
+  BINANCE__SYMBOLS__1:  "ethusdt"
+  BINANCE__SYMBOLS__2:  "solusdt"
+  BINANCE__SYMBOLS__3:  "bnbusdt"
+  BINANCE__SYMBOLS__4:  "xrpusdt"
+  BINANCE__SYMBOLS__5:  "adausdt"
+  BINANCE__SYMBOLS__6:  "dogeusdt"
+  BINANCE__SYMBOLS__7:  "maticusdt"
+  BINANCE__SYMBOLS__8:  "dotusdt"
+  BINANCE__SYMBOLS__9:  "shibusdt"
+  BINANCE__SYMBOLS__10: "ltcusdt"
+  BINANCE__SYMBOLS__11: "avaxusdt"
+  BINANCE__SYMBOLS__12: "linkusdt"
+  BINANCE__SYMBOLS__13: "atomusdt"
+  BINANCE__SYMBOLS__14: "trxusdt"
