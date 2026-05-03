@@ -5,11 +5,9 @@ metadata:
   labels:
     app: marketdata-ingestor
 spec:
-  # Default: 1 pod (no symbol duplication).
-  # Scale up to process more symbols in parallel — each pod
-  # automatically receives its own subset via SymbolPartitioner.
+  # 3 pods → each handles 5 of the 15 symbols.
   # Keep replicas <= number of symbols (15 max for current config).
-  replicas: 1
+  replicas: 3
   serviceName: ingestor-headless   # must match the headless Service below
   selector:
     matchLabels:
@@ -36,7 +34,7 @@ spec:
             # Must match spec.replicas above so each pod knows the total.
             # Update this value whenever you change replicas.
             - name: TOTAL_PODS
-              value: "1"
+              value: "3"
           resources:
             requests:
               cpu: 100m

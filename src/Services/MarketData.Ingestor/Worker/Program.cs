@@ -8,6 +8,7 @@ using TradingApp.MarketData.Ingestor.Infrastructure.Binance;
 using TradingApp.MarketData.Ingestor.Infrastructure.Partitioning;
 using TradingApp.MarketData.Ingestor.Worker.HostedServices;
 using TradingApp.MarketData.Ingestor.Worker.Testing;
+using TradingApp.Kafka.Configuration;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -48,6 +49,7 @@ else
 builder.Services.AddSingleton<IBinanceTradeStream, BinanceTradeStream>();
 builder.Services.AddSingleton<ITradeIngestionPipeline, TradeIngestionPipeline>();
 builder.Services.AddHostedService<MarketDataIngestionWorker>();
+builder.Services.AddHostedService<RetryConsumerHostedService>();
 builder.Services.AddHostedService<TestAggregatedPublisherHostedService>();
 
 var app = builder.Build();

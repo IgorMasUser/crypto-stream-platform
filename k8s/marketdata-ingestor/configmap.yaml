@@ -7,6 +7,12 @@ data:
   KAFKA__BOOTSTRAPSERVERS: "kafka:9092"
   KAFKA__PUBLISHSAMPLEONSTARTUP: "false"
 
+  INGESTOR__KAFKATOPIC: "raw-market-trades"
+  INGESTOR__RETRYTOPIC: "raw-market-trades-retry"
+  INGESTOR__DEADLETTERTOPIC: "raw-market-trades-dlq"
+  INGESTOR__RETRYCONSUMER__GROUPID: "marketdata-ingestor-retry"
+  INGESTOR__RETRYCONSUMER__RETRYDELAYSECONDS: "30"
+
   # Symbols are declared as indexed keys so ASP.NET Core binds them
   # correctly to string[] (BinanceStreamOptions.Symbols).
   # Add or remove entries here to change the symbol universe.
