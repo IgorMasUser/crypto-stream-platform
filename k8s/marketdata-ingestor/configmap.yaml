@@ -7,6 +7,8 @@ data:
   KAFKA__BOOTSTRAPSERVERS: "kafka:9092"
   KAFKA__PUBLISHSAMPLEONSTARTUP: "false"
 
+  LOGGING__ELASTICSEARCH__URL: "http://elastic:9200"
+
   INGESTOR__KAFKATOPIC: "raw-market-trades"
   INGESTOR__RETRYTOPIC: "raw-market-trades-retry"
   INGESTOR__DEADLETTERTOPIC: "raw-market-trades-dlq"

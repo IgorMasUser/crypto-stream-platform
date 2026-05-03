@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: analytics-indexer-worker
-          image: trading/analyticsindexer-worker:dev
+          image: trading/analytics-indexer-worker:dev
           imagePullPolicy: IfNotPresent
           env:
             - name: INDEXER__BOOTSTRAPSERVERS

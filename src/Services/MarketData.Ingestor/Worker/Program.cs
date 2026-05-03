@@ -1,3 +1,6 @@
+using Serilog;
+using Serilog.Events;
+using Serilog.Sinks.Elasticsearch;
 using TradingApp.Contracts.Events;
 using TradingApp.Kafka.Configuration;
 using TradingApp.Kafka.Extensions;
@@ -8,9 +11,28 @@ using TradingApp.MarketData.Ingestor.Infrastructure.Binance;
 using TradingApp.MarketData.Ingestor.Infrastructure.Partitioning;
 using TradingApp.MarketData.Ingestor.Worker.HostedServices;
 using TradingApp.MarketData.Ingestor.Worker.Testing;
-using TradingApp.Kafka.Configuration;
 
 var builder = Host.CreateApplicationBuilder(args);
+
+var esUrl = builder.Configuration["Logging:Elasticsearch:Url"] ?? "http://elastic:9200";
+
+builder.Services.AddSerilog((_, loggerConfig) =>
+    loggerConfig
+        .MinimumLevel.Information()
+        .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Warning)
+        .Enrich.FromLogContext()
+        .Enrich.WithProperty("Application", "TradingApp.MarketData.Ingestor")
+        .Enrich.WithProperty("Pod", Environment.GetEnvironmentVariable("POD_NAME") ?? Environment.MachineName)
+        .WriteTo.Console(
+            outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext}: {Message:lj}{NewLine}{Exception}")
+        .WriteTo.Elasticsearch(new ElasticsearchSinkOptions(new Uri(esUrl))
+        {
+            AutoRegisterTemplate = true,
+            IndexFormat          = "tradingapp-logs-{0:yyyy.MM}",
+            TypeName             = null,
+            FailureCallback      = (e, ex) => Console.Error.WriteLine($"[Serilog ES] Failed: {ex?.Message}")
+        })
+);
 
 builder.Services.Configure<KafkaProducerOptions>(builder.Configuration.GetSection("Kafka"));
 builder.Services.Configure<BinanceStreamOptions>(builder.Configuration.GetSection("Binance"));
